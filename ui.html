@@ -6,7 +6,8 @@
   }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Oxygen, Ubuntu, Cantarell, sans-serif;
     background: #1e1e1e;
     color: #ffffff;
     padding: 16px;
@@ -35,9 +36,7 @@
     height: 512px;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 
-      0 2px 8px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
     background: #000000;
   }
 
@@ -130,7 +129,7 @@
   }
 
   .control-group label span {
-    font-family: 'Monaco', 'Menlo', monospace;
+    font-family: "Monaco", "Menlo", monospace;
     color: #0d99ff;
     font-weight: 600;
     min-width: 40px;
@@ -201,6 +200,149 @@
     flex-direction: row;
     justify-content: flex-start;
   }
+
+  .shader-editor-button {
+    width: 100%;
+    background: #3c3c3c;
+    border: 1px solid #4c4c4c;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #e0e0e0;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .shader-editor-button:hover {
+    background: #454545;
+    border-color: #0d99ff;
+  }
+
+  .shader-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .shader-modal.open {
+    display: flex;
+  }
+
+  .shader-modal-content {
+    background: #2c2c2c;
+    border: 1px solid #3c3c3c;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .shader-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #3c3c3c;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .shader-modal-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .close-modal {
+    background: none;
+    border: none;
+    color: #999999;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+  }
+
+  .close-modal:hover {
+    background: #3c3c3c;
+    color: #ffffff;
+  }
+
+  .shader-modal-body {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #shaderEditor {
+    width: 100%;
+    min-height: 400px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 16px;
+    border: 1px solid #3c3c3c;
+    border-radius: 6px;
+    resize: vertical;
+    outline: none;
+  }
+
+  #shaderEditor:focus {
+    border-color: #0d99ff;
+  }
+
+  .shader-modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #3c3c3c;
+    display: flex;
+    gap: 8px;
+  }
+
+  .shader-modal-footer button {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .error-message {
+    background: #5c2020;
+    border: 1px solid #8b3333;
+    color: #ff6b6b;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    display: none;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    line-height: 1.4;
+  }
+
+  .error-message.show {
+    display: block;
+  }
 </style>
 
 <h2>Shader Studio</h2>
@@ -209,55 +351,98 @@
   <div class="controls">
     <div class="control-group">
       <label for="speed">Speed: <span id="speed-value">1.0</span></label>
-      <input type="range" id="speed" min="0" max="3" step="0.1" value="1.0">
+      <input type="range" id="speed" min="0" max="3" step="0.1" value="1.0" />
     </div>
-    
+
     <div class="control-group">
-      <label for="lineCount">Line Count: <span id="lineCount-value">10</span></label>
-      <input type="range" id="lineCount" min="1" max="20" step="1" value="10">
+      <label for="lineCount"
+        >Line Count: <span id="lineCount-value">10</span></label
+      >
+      <input type="range" id="lineCount" min="1" max="20" step="1" value="10" />
     </div>
-    
+
     <div class="control-group">
-      <label for="amplitude">Amplitude: <span id="amplitude-value">0.20</span></label>
-      <input type="range" id="amplitude" min="0" max="0.5" step="0.01" value="0.2">
+      <label for="amplitude"
+        >Amplitude: <span id="amplitude-value">0.20</span></label
+      >
+      <input
+        type="range"
+        id="amplitude"
+        min="0"
+        max="0.5"
+        step="0.01"
+        value="0.2"
+      />
     </div>
-    
+
     <div class="control-group">
-      <label for="yOffset">Y Offset: <span id="yOffset-value">0.00</span></label>
-      <input type="range" id="yOffset" min="-0.5" max="0.5" step="0.01" value="0">
+      <label for="yOffset"
+        >Y Offset: <span id="yOffset-value">0.00</span></label
+      >
+      <input
+        type="range"
+        id="yOffset"
+        min="-0.5"
+        max="0.5"
+        step="0.01"
+        value="0"
+      />
     </div>
-    
+
     <div class="control-group">
       <label>
-        <input type="checkbox" id="pauseTime">
+        <input type="checkbox" id="pauseTime" />
         Pause Animation
       </label>
     </div>
+
+    <button class="shader-editor-button" id="openShaderEditor">
+      Advanced Editor
+    </button>
+
     <div class="button-container">
-  <button id="create">Create</button>
-  <button id="cancel">Cancel</button>
-</div>
+      <button id="create">Create</button>
+      <button id="cancel">Cancel</button>
+    </div>
   </div>
-
-
 
   <div class="preview-container">
     <canvas id="glCanvas" width="512" height="512"></canvas>
   </div>
 </div>
 
-<p class="info-text">Live shader preview above • Adjust parameters in real-time</p>
+<p class="info-text">
+  Live shader preview above • Adjust parameters in real-time
+</p>
+
+<!-- Shader Editor Modal -->
+<div class="shader-modal" id="shaderModal">
+  <div class="shader-modal-content">
+    <div class="shader-modal-header">
+      <h3>Advanced Shader Editor</h3>
+      <button class="close-modal" id="closeModal">✕</button>
+    </div>
+    <div class="shader-modal-body">
+      <textarea id="shaderEditor" spellcheck="false" aria-label="GLSL Fragment Shader Code"></textarea>
+      <div class="error-message" id="shaderError"></div>
+    </div>
+    <div class="shader-modal-footer">
+      <button id="resetShader">Reset to Default</button>
+      <button id="reloadShader">Apply Shader</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// Shader sources
-const VERTEX_SHADER = `
+  // Shader sources
+  const VERTEX_SHADER = `
   attribute vec2 a_position;
   void main() {
     gl_Position = vec4(a_position, 0, 1);
   }
 `;
 
-const FRAGMENT_SHADER = `
+  const FRAGMENT_SHADER = `
   precision mediump float;
   uniform vec2 iResolution;
   uniform float iTime;
@@ -305,199 +490,338 @@ const FRAGMENT_SHADER = `
   }
 `;
 
-// Global state
-const state = {
-  gl: null,
-  program: null,
-  canvas: null,
-  uniforms: {},
-  startTime: Date.now(),
-  params: {
-    speed: 1.0,
-    lineCount: 10.0,
-    amplitude: 0.2,
-    yOffset: 0.0,
-    paused: false,
-    pausedTime: 0.0
-  }
-};
-
-// Helper functions
-function sendError(message) {
-  parent.postMessage({ pluginMessage: { type: 'shader-error', error: message } }, '*');
-}
-
-function getCurrentTime() {
-  return state.params.paused 
-    ? state.params.pausedTime 
-    : (Date.now() - state.startTime) / 1000.0;
-}
-
-function createShader(type, source) {
-  const shader = state.gl.createShader(type);
-  state.gl.shaderSource(shader, source);
-  state.gl.compileShader(shader);
-  
-  if (!state.gl.getShaderParameter(shader, state.gl.COMPILE_STATUS)) {
-    console.error('Shader error:', state.gl.getShaderInfoLog(shader));
-    state.gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
-function initWebGL() {
-  state.canvas = document.getElementById('glCanvas');
-  state.gl = state.canvas.getContext('webgl');
-  
-  if (!state.gl) {
-    sendError('WebGL not supported');
-    return false;
-  }
-
-  const vertexShader = createShader(state.gl.VERTEX_SHADER, VERTEX_SHADER);
-  const fragmentShader = createShader(state.gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-  
-  if (!vertexShader || !fragmentShader) {
-    sendError('Failed to create shaders');
-    return false;
-  }
-  
-  state.program = state.gl.createProgram();
-  state.gl.attachShader(state.program, vertexShader);
-  state.gl.attachShader(state.program, fragmentShader);
-  state.gl.linkProgram(state.program);
-  
-  if (!state.gl.getProgramParameter(state.program, state.gl.LINK_STATUS)) {
-    console.error('Program error:', state.gl.getProgramInfoLog(state.program));
-    sendError('Failed to create shader program');
-    return false;
-  }
-
-  // Setup geometry
-  const positionBuffer = state.gl.createBuffer();
-  state.gl.bindBuffer(state.gl.ARRAY_BUFFER, positionBuffer);
-  state.gl.bufferData(state.gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), state.gl.STATIC_DRAW);
-
-  // Get uniform locations
-  state.uniforms = {
-    position: state.gl.getAttribLocation(state.program, 'a_position'),
-    resolution: state.gl.getUniformLocation(state.program, 'iResolution'),
-    time: state.gl.getUniformLocation(state.program, 'iTime'),
-    speed: state.gl.getUniformLocation(state.program, 'uSpeed'),
-    lineCount: state.gl.getUniformLocation(state.program, 'uLineCount'),
-    amplitude: state.gl.getUniformLocation(state.program, 'uAmplitude'),
-    yOffset: state.gl.getUniformLocation(state.program, 'uYOffset')
+  // Global state
+  const state = {
+    gl: null,
+    program: null,
+    canvas: null,
+    uniforms: {},
+    startTime: Date.now(),
+    params: {
+      speed: 1.0,
+      lineCount: 10.0,
+      amplitude: 0.2,
+      yOffset: 0.0,
+      paused: false,
+      pausedTime: 0.0,
+    },
+    customFragmentShader: null,
   };
 
-  return true;
-}
+  const DEFAULT_FRAGMENT_SHADER = FRAGMENT_SHADER;
 
-function renderShader() {
-  if (!state.gl || !state.program) return;
-
-  state.gl.useProgram(state.program);
-  state.gl.enableVertexAttribArray(state.uniforms.position);
-  state.gl.vertexAttribPointer(state.uniforms.position, 2, state.gl.FLOAT, false, 0, 0);
-
-  // Set uniforms
-  state.gl.uniform2f(state.uniforms.resolution, state.canvas.width, state.canvas.height);
-  state.gl.uniform1f(state.uniforms.time, getCurrentTime());
-  state.gl.uniform1f(state.uniforms.speed, state.params.speed);
-  state.gl.uniform1f(state.uniforms.lineCount, state.params.lineCount);
-  state.gl.uniform1f(state.uniforms.amplitude, state.params.amplitude);
-  state.gl.uniform1f(state.uniforms.yOffset, state.params.yOffset);
-
-  state.gl.clearColor(0, 0, 0, 1);
-  state.gl.clear(state.gl.COLOR_BUFFER_BIT);
-  state.gl.drawArrays(state.gl.TRIANGLE_STRIP, 0, 4);
-}
-
-function renderLoop() {
-  renderShader();
-  requestAnimationFrame(renderLoop);
-}
-
-function captureShader() {
-  if (!state.gl) {
-    sendError('WebGL context not available');
-    return;
+  // Helper functions
+  function sendError(message) {
+    parent.postMessage(
+      { pluginMessage: { type: "shader-error", error: message } },
+      "*"
+    );
   }
 
-  try {
+  function getCurrentTime() {
+    return state.params.paused
+      ? state.params.pausedTime
+      : (Date.now() - state.startTime) / 1000.0;
+  }
+
+  function createShader(type, source) {
+    const shader = state.gl.createShader(type);
+    state.gl.shaderSource(shader, source);
+    state.gl.compileShader(shader);
+
+    if (!state.gl.getShaderParameter(shader, state.gl.COMPILE_STATUS)) {
+      console.error("Shader error:", state.gl.getShaderInfoLog(shader));
+      state.gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+
+  function initWebGL() {
+    state.canvas = document.getElementById("glCanvas");
+    state.gl = state.canvas.getContext("webgl");
+
+    if (!state.gl) {
+      sendError("WebGL not supported");
+      return false;
+    }
+
+    const vertexShader = createShader(state.gl.VERTEX_SHADER, VERTEX_SHADER);
+    const fragmentShaderSource = state.customFragmentShader || FRAGMENT_SHADER;
+    const fragmentShader = createShader(
+      state.gl.FRAGMENT_SHADER,
+      fragmentShaderSource
+    );
+
+    if (!vertexShader || !fragmentShader) {
+      sendError("Failed to create shaders");
+      return false;
+    }
+
+    state.program = state.gl.createProgram();
+    state.gl.attachShader(state.program, vertexShader);
+    state.gl.attachShader(state.program, fragmentShader);
+    state.gl.linkProgram(state.program);
+
+    if (!state.gl.getProgramParameter(state.program, state.gl.LINK_STATUS)) {
+      console.error(
+        "Program error:",
+        state.gl.getProgramInfoLog(state.program)
+      );
+      sendError("Failed to create shader program");
+      return false;
+    }
+
+    // Setup geometry
+    const positionBuffer = state.gl.createBuffer();
+    state.gl.bindBuffer(state.gl.ARRAY_BUFFER, positionBuffer);
+    state.gl.bufferData(
+      state.gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+      state.gl.STATIC_DRAW
+    );
+
+    // Get uniform locations
+    state.uniforms = {
+      position: state.gl.getAttribLocation(state.program, "a_position"),
+      resolution: state.gl.getUniformLocation(state.program, "iResolution"),
+      time: state.gl.getUniformLocation(state.program, "iTime"),
+      speed: state.gl.getUniformLocation(state.program, "uSpeed"),
+      lineCount: state.gl.getUniformLocation(state.program, "uLineCount"),
+      amplitude: state.gl.getUniformLocation(state.program, "uAmplitude"),
+      yOffset: state.gl.getUniformLocation(state.program, "uYOffset"),
+    };
+
+    return true;
+  }
+
+  function renderShader() {
+    if (!state.gl || !state.program) return;
+
+    state.gl.useProgram(state.program);
+    state.gl.enableVertexAttribArray(state.uniforms.position);
+    state.gl.vertexAttribPointer(
+      state.uniforms.position,
+      2,
+      state.gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    // Set uniforms
+    state.gl.uniform2f(
+      state.uniforms.resolution,
+      state.canvas.width,
+      state.canvas.height
+    );
+    state.gl.uniform1f(state.uniforms.time, getCurrentTime());
+    state.gl.uniform1f(state.uniforms.speed, state.params.speed);
+    state.gl.uniform1f(state.uniforms.lineCount, state.params.lineCount);
+    state.gl.uniform1f(state.uniforms.amplitude, state.params.amplitude);
+    state.gl.uniform1f(state.uniforms.yOffset, state.params.yOffset);
+
+    state.gl.clearColor(0, 0, 0, 1);
+    state.gl.clear(state.gl.COLOR_BUFFER_BIT);
+    state.gl.drawArrays(state.gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  function renderLoop() {
     renderShader();
+    requestAnimationFrame(renderLoop);
+  }
+
+  function captureShader() {
+    if (!state.gl) {
+      sendError("WebGL context not available");
+      return;
+    }
+
+    try {
+      renderShader();
+
+      state.canvas.toBlob((blob) => {
+        if (!blob) {
+          sendError("Failed to create image blob");
+          return;
+        }
+
+        blob
+          .arrayBuffer()
+          .then((buffer) => {
+            parent.postMessage(
+              {
+                pluginMessage: {
+                  type: "shader-rendered",
+                  imageData: new Uint8Array(buffer),
+                },
+              },
+              "*"
+            );
+          })
+          .catch((error) => {
+            sendError("Error converting image: " + error.message);
+          });
+      }, "image/png");
+    } catch (error) {
+      sendError("Error capturing pixels: " + error.message);
+    }
+  }
+
+  function recompileShader() {
+    const shaderSource = document.getElementById("shaderEditor").value;
+    const errorDiv = document.getElementById("shaderError");
     
-    state.canvas.toBlob((blob) => {
-      if (!blob) {
-        sendError('Failed to create image blob');
-        return;
+    // Clear previous error
+    errorDiv.classList.remove("show");
+    errorDiv.textContent = "";
+
+    try {
+      // Try to compile the new shader
+      const testFragmentShader = createShader(state.gl.FRAGMENT_SHADER, shaderSource);
+      
+      if (!testFragmentShader) {
+        const log = state.gl.getShaderInfoLog(state.gl.createShader(state.gl.FRAGMENT_SHADER));
+        throw new Error(log || "Shader compilation failed");
+      }
+
+      // Create new program
+      const vertexShader = createShader(state.gl.VERTEX_SHADER, VERTEX_SHADER);
+      const newProgram = state.gl.createProgram();
+      state.gl.attachShader(newProgram, vertexShader);
+      state.gl.attachShader(newProgram, testFragmentShader);
+      state.gl.linkProgram(newProgram);
+
+      if (!state.gl.getProgramParameter(newProgram, state.gl.LINK_STATUS)) {
+        const log = state.gl.getProgramInfoLog(newProgram);
+        throw new Error(log || "Program linking failed");
+      }
+
+      // Success! Update the program
+      if (state.program) {
+        state.gl.deleteProgram(state.program);
       }
       
-      blob.arrayBuffer().then(buffer => {
-        parent.postMessage({ 
-          pluginMessage: { 
-            type: 'shader-rendered', 
-            imageData: new Uint8Array(buffer)
-          } 
-        }, '*');
-      }).catch(error => {
-        sendError('Error converting image: ' + error.message);
-      });
-    }, 'image/png');
-  } catch (error) {
-    sendError('Error capturing pixels: ' + error.message);
-  }
-}
+      state.program = newProgram;
+      state.customFragmentShader = shaderSource;
 
-// UI Event handlers
-function setupControls() {
-  const controls = [
-    { id: 'speed', key: 'speed', format: (v) => v.toFixed(1) },
-    { id: 'lineCount', key: 'lineCount', format: Math.round },
-    { id: 'amplitude', key: 'amplitude', format: (v) => v.toFixed(2) },
-    { id: 'yOffset', key: 'yOffset', format: (v) => v.toFixed(2) }
-  ];
+      // Re-get uniform locations
+      state.uniforms = {
+        position: state.gl.getAttribLocation(state.program, "a_position"),
+        resolution: state.gl.getUniformLocation(state.program, "iResolution"),
+        time: state.gl.getUniformLocation(state.program, "iTime"),
+        speed: state.gl.getUniformLocation(state.program, "uSpeed"),
+        lineCount: state.gl.getUniformLocation(state.program, "uLineCount"),
+        amplitude: state.gl.getUniformLocation(state.program, "uAmplitude"),
+        yOffset: state.gl.getUniformLocation(state.program, "uYOffset"),
+      };
 
-  controls.forEach(({ id, key, format }) => {
-    document.getElementById(id).addEventListener('input', (e) => {
-      state.params[key] = parseFloat(e.target.value);
-      document.getElementById(`${id}-value`).textContent = format(state.params[key]);
-    });
-  });
+      // Setup geometry buffer again
+      const positionBuffer = state.gl.createBuffer();
+      state.gl.bindBuffer(state.gl.ARRAY_BUFFER, positionBuffer);
+      state.gl.bufferData(
+        state.gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+        state.gl.STATIC_DRAW
+      );
 
-  document.getElementById('pauseTime').addEventListener('change', (e) => {
-    if (e.target.checked) {
-      // Pausing: capture current time
-      state.params.pausedTime = (Date.now() - state.startTime) / 1000.0;
-      state.params.paused = true;
-    } else {
-      // Unpausing: adjust startTime to continue from where we paused
-      state.startTime = Date.now() - (state.params.pausedTime * 1000);
-      state.params.paused = false;
+      return true;
+    } catch (error) {
+      errorDiv.textContent = "Shader Error: " + error.message;
+      errorDiv.classList.add("show");
+      return false;
     }
-  });
-
-  document.getElementById('create').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'create-rectangle' } }, '*');
-  };
-
-  document.getElementById('cancel').onclick = () => {
-    parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
-  };
-}
-
-// Message handler
-onmessage = (event) => {
-  if (event.data.pluginMessage.type === 'render-shader') {
-    captureShader();
   }
-};
 
-// Initialize
-if (initWebGL()) {
-  setupControls();
-  renderLoop();
-} else {
-  console.error('Failed to initialize WebGL');
-}
+  // UI Event handlers
+  function setupControls() {
+    // Initialize shader editor with current shader
+    document.getElementById("shaderEditor").value = DEFAULT_FRAGMENT_SHADER;
+
+    // Modal controls
+    const modal = document.getElementById("shaderModal");
+    
+    document.getElementById("openShaderEditor").addEventListener("click", () => {
+      modal.classList.add("open");
+      // Update textarea with current shader (in case it was modified)
+      const currentShader = state.customFragmentShader || DEFAULT_FRAGMENT_SHADER;
+      document.getElementById("shaderEditor").value = currentShader;
+    });
+
+    document.getElementById("closeModal").addEventListener("click", () => {
+      modal.classList.remove("open");
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.classList.remove("open");
+      }
+    });
+
+    // Shader editor buttons
+    document.getElementById("reloadShader").addEventListener("click", () => {
+      if (recompileShader()) {
+        // Clear error on success
+        document.getElementById("shaderError").classList.remove("show");
+      }
+    });
+
+    document.getElementById("resetShader").addEventListener("click", () => {
+      document.getElementById("shaderEditor").value = DEFAULT_FRAGMENT_SHADER;
+      state.customFragmentShader = null;
+      recompileShader();
+    });
+
+    const controls = [
+      { id: "speed", key: "speed", format: (v) => v.toFixed(1) },
+      { id: "lineCount", key: "lineCount", format: Math.round },
+      { id: "amplitude", key: "amplitude", format: (v) => v.toFixed(2) },
+      { id: "yOffset", key: "yOffset", format: (v) => v.toFixed(2) },
+    ];
+
+    controls.forEach(({ id, key, format }) => {
+      document.getElementById(id).addEventListener("input", (e) => {
+        state.params[key] = parseFloat(e.target.value);
+        document.getElementById(`${id}-value`).textContent = format(
+          state.params[key]
+        );
+      });
+    });
+
+    document.getElementById("pauseTime").addEventListener("change", (e) => {
+      if (e.target.checked) {
+        // Pausing: capture current time
+        state.params.pausedTime = (Date.now() - state.startTime) / 1000.0;
+        state.params.paused = true;
+      } else {
+        // Unpausing: adjust startTime to continue from where we paused
+        state.startTime = Date.now() - state.params.pausedTime * 1000;
+        state.params.paused = false;
+      }
+    });
+
+    document.getElementById("create").onclick = () => {
+      parent.postMessage({ pluginMessage: { type: "create-rectangle" } }, "*");
+    };
+
+    document.getElementById("cancel").onclick = () => {
+      parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
+    };
+  }
+
+  // Message handler
+  onmessage = (event) => {
+    if (event.data.pluginMessage.type === "render-shader") {
+      captureShader();
+    }
+  };
+
+  // Initialize
+  if (initWebGL()) {
+    setupControls();
+    renderLoop();
+  } else {
+    console.error("Failed to initialize WebGL");
+  }
 </script>
