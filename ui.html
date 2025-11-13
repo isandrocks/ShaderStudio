@@ -272,7 +272,7 @@
     width: 100%;
     background: #3c3c3c;
     border: 1px solid #4c4c4c;
-    padding: 10px;
+    padding: 4px;
     font-size: 12px;
     font-weight: 500;
     color: #e0e0e0;
@@ -343,9 +343,10 @@
     height: 24px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: right;
     border-radius: 4px;
     transition: all 0.15s ease;
+    flex-shrink: 0;
   }
 
   .close-modal:hover {
@@ -471,9 +472,18 @@
     </div>
 
     <div class="control-group">
-      <label for="lineCount">Line Count: <span id="lineCount-value">10</span></label>
+      <label for="lineCount"
+        >Line Count: <span id="lineCount-value">10</span></label
+      >
       <div class="slider-container">
-        <input type="range" id="lineCount" min="1" max="20" step="1" value="10" />
+        <input
+          type="range"
+          id="lineCount"
+          min="1"
+          max="20"
+          step="1"
+          value="10"
+        />
         <svg
           class="delete-icon"
           viewBox="0 0 12.7 12.7"
@@ -505,7 +515,9 @@
     </div>
 
     <div class="control-group">
-      <label for="amplitude">Amplitude: <span id="amplitude-value">0.20</span></label>
+      <label for="amplitude"
+        >Amplitude: <span id="amplitude-value">0.20</span></label
+      >
       <div class="slider-container">
         <input
           type="range"
@@ -546,7 +558,9 @@
     </div>
 
     <div class="control-group">
-      <label for="yOffset">Y Offset: <span id="yOffset-value">0.00</span></label>
+      <label for="yOffset"
+        >Y Offset: <span id="yOffset-value">0.00</span></label
+      >
       <div class="slider-container">
         <input
           type="range"
@@ -586,12 +600,10 @@
       </div>
     </div>
 
-
-
     <div class="button-container">
       <button id="create">Create</button>
       <button id="cancel">Cancel</button>
-    </div>    
+    </div>
     <button class="shader-editor-button" id="openShaderEditor">
       Advanced Editor
     </button>
