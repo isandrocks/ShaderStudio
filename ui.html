@@ -38,12 +38,48 @@
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
     background: #000000;
+    position: relative;
   }
 
   #glCanvas {
     display: block;
     width: 100%;
     height: 100%;
+  }
+
+  .pause-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    padding: 7px 11px;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  .pause-overlay label {
+    display: flex;
+    align-items: center;
+    font-family: "Liberation Sans", "Inter", sans-serif;
+    font-size: 12px;
+    color: rgba(179, 179, 179, 0.56);
+    font-weight: 400;
+    cursor: pointer;
+    pointer-events: auto;
+    margin: 0;
+    gap: 8px;
+  }
+
+  .pause-overlay input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #ffffff;
+    border: 1px solid #767676;
+    border-radius: 2.5px;
   }
 
   .button-container {
@@ -113,10 +149,18 @@
     border: 1px solid #3c3c3c;
   }
 
+  .add-control-group svg {
+    fill: #0d99ff;
+    fill-rule: evenodd;
+    height: 16px;
+    cursor: pointer;
+  }
+
   .control-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative;
   }
 
   .control-group label {
@@ -124,16 +168,39 @@
     justify-content: space-between;
     align-items: center;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     color: #e0e0e0;
   }
 
   .control-group label span {
-    font-family: "Monaco", "Menlo", monospace;
+    font-family: "Inter", sans-serif;
     color: #0d99ff;
-    font-weight: 600;
+    font-weight: 700;
     min-width: 40px;
     text-align: right;
+    padding-left: 18px;
+  }
+
+  .slider-container {
+    position: relative;
+    width: 90%;
+  }
+
+  .control-group svg.delete-icon {
+    position: absolute;
+    fill: #a03e3e;
+    fill-rule: evenodd;
+    height: 12px;
+    width: 12px;
+    cursor: pointer;
+    top: -4px;
+    right: -18px;
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .control-group svg.delete-icon:hover {
+    fill: #c74e4e;
   }
 
   input[type="range"] {
@@ -231,6 +298,7 @@
     justify-content: center;
     z-index: 1000;
     padding: 20px;
+    overflow: hidden;
   }
 
   .shader-modal.open {
@@ -292,6 +360,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    overflow: hidden;
   }
 
   #shaderEditor {
@@ -299,7 +368,7 @@
     min-height: 400px;
     background: #1e1e1e;
     color: #d4d4d4;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
     font-size: 12px;
     line-height: 1.6;
     padding: 16px;
@@ -336,7 +405,7 @@
     display: none;
     max-height: 120px;
     overflow-y: auto;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
     line-height: 1.4;
   }
 
@@ -349,64 +418,192 @@
 
 <div class="main-container">
   <div class="controls">
+    <div class="add-control-group">
+      <svg
+        class="add-icon"
+        viewBox="0 0 12.7 12.7"
+        version="1.1"
+        id="svg1"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:svg="http://www.w3.org/2000/svg"
+      >
+        <defs id="defs1" />
+        <g id="layer1">
+          <path
+            d="m 5.953125,1.5482776 0,4.4048474 H 1.4557248 A 0.39687467,0.39687467 135 0 0 1.0588501,6.3499997 v 0.00805 A 0.38779585,0.38779585 45 0 0 1.4466459,6.7458415 H 5.953125 V 11.245825 A 0.3968749,0.3968749 45 0 0 6.3499999,11.6427 0.3958416,0.3958416 135 0 0 6.7458415,11.246858 V 6.7458415 H 11.246858 A 0.39584183,0.39584183 135 0 0 11.6427,6.3499997 v 0 A 0.39687467,0.39687467 45 0 0 11.245825,5.953125 H 6.7458415 V 1.4546919 A 0.39584183,0.39584183 45 0 0 6.3499997,1.0588501 0.44556075,0.44556075 129.03845 0 0 5.953125,1.5482776 Z"
+            id="path9"
+          />
+        </g>
+      </svg>
+    </div>
     <div class="control-group">
       <label for="speed">Speed: <span id="speed-value">1.0</span></label>
-      <input type="range" id="speed" min="0" max="3" step="0.1" value="1.0" />
+      <div class="slider-container">
+        <input type="range" id="speed" min="0" max="3" step="0.1" value="1.0" />
+        <svg
+          class="delete-icon"
+          viewBox="0 0 12.7 12.7"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g>
+            <path
+              d="m 1.0588501,2.7770915 c -0.21999777,-3e-6 -0.3980208,0.1789472 -0.396875,0.398942 2.851e-4,0.2189862 0.17788861,0.3963585 0.396875,0.3963583 H 11.6427 C 11.861485,3.572107 12.038773,3.394818 12.039058,3.1760335 12.040203,2.9562407 11.862496,2.7773748 11.6427,2.7770915 Z"
+            />
+            <path
+              d="m 5.2911499,0.6619751 c -0.219188,-1e-8 -0.396875,0.17768699 -0.396875,0.396875 2.852e-4,0.2189862 0.1778887,0.3963584 0.396875,0.3963582 H 7.4083333 C 7.6271179,1.4549237 7.8044069,1.2776347 7.8046916,1.0588501 7.8046918,0.83986371 7.6273195,0.6622602 7.4083333,0.6619751 Z"
+            />
+            <path
+              d="m 1.7208252,4.2322998 v 6.3525832 a 1.4541746,1.4541746 45 0 0 1.4541746,1.454175 h 6.35 A 1.4557252,1.4557252 135 0 0 10.980725,10.583333 V 4.2322998 c -6.75e-4,-0.518571 -0.794629,-0.5186072 -0.7953,0 V 10.58385 A 0.6604255,0.6604255 135 0 1 9.5249995,11.244275 H 3.1744839 A 0.66094222,0.66094222 45 0 1 2.5135417,10.583333 V 4.2322998 c -6.742e-4,-0.5181264 -0.7920423,-0.5181262 -0.7927165,0 z"
+            />
+            <path
+              d="M 8.4666667,4.8942749 C 8.2476805,4.89456 8.0703082,5.0721635 8.0703084,5.2911499 V 9.5255168 C 8.0705931,9.7443014 8.2478821,9.9215904 8.4666667,9.921875 8.6854513,9.9215903 8.8627402,9.7443014 8.8630249,9.5255168 V 5.2911499 c 2e-7,-0.2189863 -0.177372,-0.3965898 -0.3963582,-0.396875 z"
+            />
+            <path
+              d="M 6.3494832,4.8942749 C 6.130497,4.8945601 5.9531248,5.0721636 5.953125,5.2911499 V 9.5255168 C 5.9534097,9.7443014 6.1306986,9.9215903 6.3494832,9.921875 6.5682678,9.9215904 6.7455568,9.7443014 6.7458415,9.5255168 V 5.2911499 C 6.7458417,5.0721635 6.5684694,4.89456 6.3494832,4.8942749 Z"
+            />
+            <path
+              d="M 4.2343669,4.8942749 C 4.0145737,4.8934163 3.8359399,5.071355 3.8359416,5.2911499 V 9.5255168 C 3.8362263,9.7443014 4.0135152,9.9215903 4.2322998,9.921875 4.4510844,9.9215903 4.6283733,9.7443014 4.628658,9.5255168 l 0.00207,-4.2343669 c 2e-7,-0.2189875 -0.1773738,-0.3965914 -0.3963611,-0.396875 z"
+            />
+          </g>
+        </svg>
+      </div>
     </div>
 
     <div class="control-group">
-      <label for="lineCount"
-        >Line Count: <span id="lineCount-value">10</span></label
-      >
-      <input type="range" id="lineCount" min="1" max="20" step="1" value="10" />
+      <label for="lineCount">Line Count: <span id="lineCount-value">10</span></label>
+      <div class="slider-container">
+        <input type="range" id="lineCount" min="1" max="20" step="1" value="10" />
+        <svg
+          class="delete-icon"
+          viewBox="0 0 12.7 12.7"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g>
+            <path
+              d="m 1.0588501,2.7770915 c -0.21999777,-3e-6 -0.3980208,0.1789472 -0.396875,0.398942 2.851e-4,0.2189862 0.17788861,0.3963585 0.396875,0.3963583 H 11.6427 C 11.861485,3.572107 12.038773,3.394818 12.039058,3.1760335 12.040203,2.9562407 11.862496,2.7773748 11.6427,2.7770915 Z"
+            />
+            <path
+              d="m 5.2911499,0.6619751 c -0.219188,-1e-8 -0.396875,0.17768699 -0.396875,0.396875 2.852e-4,0.2189862 0.1778887,0.3963584 0.396875,0.3963582 H 7.4083333 C 7.6271179,1.4549237 7.8044069,1.2776347 7.8046916,1.0588501 7.8046918,0.83986371 7.6273195,0.6622602 7.4083333,0.6619751 Z"
+            />
+            <path
+              d="m 1.7208252,4.2322998 v 6.3525832 a 1.4541746,1.4541746 45 0 0 1.4541746,1.454175 h 6.35 A 1.4557252,1.4557252 135 0 0 10.980725,10.583333 V 4.2322998 c -6.75e-4,-0.518571 -0.794629,-0.5186072 -0.7953,0 V 10.58385 A 0.6604255,0.6604255 135 0 1 9.5249995,11.244275 H 3.1744839 A 0.66094222,0.66094222 45 0 1 2.5135417,10.583333 V 4.2322998 c -6.742e-4,-0.5181264 -0.7920423,-0.5181262 -0.7927165,0 z"
+            />
+            <path
+              d="M 8.4666667,4.8942749 C 8.2476805,4.89456 8.0703082,5.0721635 8.0703084,5.2911499 V 9.5255168 C 8.0705931,9.7443014 8.2478821,9.9215904 8.4666667,9.921875 8.6854513,9.9215903 8.8627402,9.7443014 8.8630249,9.5255168 V 5.2911499 c 2e-7,-0.2189863 -0.177372,-0.3965898 -0.3963582,-0.396875 z"
+            />
+            <path
+              d="M 6.3494832,4.8942749 C 6.130497,4.8945601 5.9531248,5.0721636 5.953125,5.2911499 V 9.5255168 C 5.9534097,9.7443014 6.1306986,9.9215903 6.3494832,9.921875 6.5682678,9.9215904 6.7455568,9.7443014 6.7458415,9.5255168 V 5.2911499 C 6.7458417,5.0721635 6.5684694,4.89456 6.3494832,4.8942749 Z"
+            />
+            <path
+              d="M 4.2343669,4.8942749 C 4.0145737,4.8934163 3.8359399,5.071355 3.8359416,5.2911499 V 9.5255168 C 3.8362263,9.7443014 4.0135152,9.9215903 4.2322998,9.921875 4.4510844,9.9215903 4.6283733,9.7443014 4.628658,9.5255168 l 0.00207,-4.2343669 c 2e-7,-0.2189875 -0.1773738,-0.3965914 -0.3963611,-0.396875 z"
+            />
+          </g>
+        </svg>
+      </div>
     </div>
 
     <div class="control-group">
-      <label for="amplitude"
-        >Amplitude: <span id="amplitude-value">0.20</span></label
-      >
-      <input
-        type="range"
-        id="amplitude"
-        min="0"
-        max="0.5"
-        step="0.01"
-        value="0.2"
-      />
+      <label for="amplitude">Amplitude: <span id="amplitude-value">0.20</span></label>
+      <div class="slider-container">
+        <input
+          type="range"
+          id="amplitude"
+          min="0"
+          max="0.5"
+          step="0.01"
+          value="0.2"
+        />
+        <svg
+          class="delete-icon"
+          viewBox="0 0 12.7 12.7"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g>
+            <path
+              d="m 1.0588501,2.7770915 c -0.21999777,-3e-6 -0.3980208,0.1789472 -0.396875,0.398942 2.851e-4,0.2189862 0.17788861,0.3963585 0.396875,0.3963583 H 11.6427 C 11.861485,3.572107 12.038773,3.394818 12.039058,3.1760335 12.040203,2.9562407 11.862496,2.7773748 11.6427,2.7770915 Z"
+            />
+            <path
+              d="m 5.2911499,0.6619751 c -0.219188,-1e-8 -0.396875,0.17768699 -0.396875,0.396875 2.852e-4,0.2189862 0.1778887,0.3963584 0.396875,0.3963582 H 7.4083333 C 7.6271179,1.4549237 7.8044069,1.2776347 7.8046916,1.0588501 7.8046918,0.83986371 7.6273195,0.6622602 7.4083333,0.6619751 Z"
+            />
+            <path
+              d="m 1.7208252,4.2322998 v 6.3525832 a 1.4541746,1.4541746 45 0 0 1.4541746,1.454175 h 6.35 A 1.4557252,1.4557252 135 0 0 10.980725,10.583333 V 4.2322998 c -6.75e-4,-0.518571 -0.794629,-0.5186072 -0.7953,0 V 10.58385 A 0.6604255,0.6604255 135 0 1 9.5249995,11.244275 H 3.1744839 A 0.66094222,0.66094222 45 0 1 2.5135417,10.583333 V 4.2322998 c -6.742e-4,-0.5181264 -0.7920423,-0.5181262 -0.7927165,0 z"
+            />
+            <path
+              d="M 8.4666667,4.8942749 C 8.2476805,4.89456 8.0703082,5.0721635 8.0703084,5.2911499 V 9.5255168 C 8.0705931,9.7443014 8.2478821,9.9215904 8.4666667,9.921875 8.6854513,9.9215903 8.8627402,9.7443014 8.8630249,9.5255168 V 5.2911499 c 2e-7,-0.2189863 -0.177372,-0.3965898 -0.3963582,-0.396875 z"
+            />
+            <path
+              d="M 6.3494832,4.8942749 C 6.130497,4.8945601 5.9531248,5.0721636 5.953125,5.2911499 V 9.5255168 C 5.9534097,9.7443014 6.1306986,9.9215903 6.3494832,9.921875 6.5682678,9.9215904 6.7455568,9.7443014 6.7458415,9.5255168 V 5.2911499 C 6.7458417,5.0721635 6.5684694,4.89456 6.3494832,4.8942749 Z"
+            />
+            <path
+              d="M 4.2343669,4.8942749 C 4.0145737,4.8934163 3.8359399,5.071355 3.8359416,5.2911499 V 9.5255168 C 3.8362263,9.7443014 4.0135152,9.9215903 4.2322998,9.921875 4.4510844,9.9215903 4.6283733,9.7443014 4.628658,9.5255168 l 0.00207,-4.2343669 c 2e-7,-0.2189875 -0.1773738,-0.3965914 -0.3963611,-0.396875 z"
+            />
+          </g>
+        </svg>
+      </div>
     </div>
 
     <div class="control-group">
-      <label for="yOffset"
-        >Y Offset: <span id="yOffset-value">0.00</span></label
-      >
-      <input
-        type="range"
-        id="yOffset"
-        min="-0.5"
-        max="0.5"
-        step="0.01"
-        value="0"
-      />
+      <label for="yOffset">Y Offset: <span id="yOffset-value">0.00</span></label>
+      <div class="slider-container">
+        <input
+          type="range"
+          id="yOffset"
+          min="-0.5"
+          max="0.5"
+          step="0.01"
+          value="0"
+        />
+        <svg
+          class="delete-icon"
+          viewBox="0 0 12.7 12.7"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g>
+            <path
+              d="m 1.0588501,2.7770915 c -0.21999777,-3e-6 -0.3980208,0.1789472 -0.396875,0.398942 2.851e-4,0.2189862 0.17788861,0.3963585 0.396875,0.3963583 H 11.6427 C 11.861485,3.572107 12.038773,3.394818 12.039058,3.1760335 12.040203,2.9562407 11.862496,2.7773748 11.6427,2.7770915 Z"
+            />
+            <path
+              d="m 5.2911499,0.6619751 c -0.219188,-1e-8 -0.396875,0.17768699 -0.396875,0.396875 2.852e-4,0.2189862 0.1778887,0.3963584 0.396875,0.3963582 H 7.4083333 C 7.6271179,1.4549237 7.8044069,1.2776347 7.8046916,1.0588501 7.8046918,0.83986371 7.6273195,0.6622602 7.4083333,0.6619751 Z"
+            />
+            <path
+              d="m 1.7208252,4.2322998 v 6.3525832 a 1.4541746,1.4541746 45 0 0 1.4541746,1.454175 h 6.35 A 1.4557252,1.4557252 135 0 0 10.980725,10.583333 V 4.2322998 c -6.75e-4,-0.518571 -0.794629,-0.5186072 -0.7953,0 V 10.58385 A 0.6604255,0.6604255 135 0 1 9.5249995,11.244275 H 3.1744839 A 0.66094222,0.66094222 45 0 1 2.5135417,10.583333 V 4.2322998 c -6.742e-4,-0.5181264 -0.7920423,-0.5181262 -0.7927165,0 z"
+            />
+            <path
+              d="M 8.4666667,4.8942749 C 8.2476805,4.89456 8.0703082,5.0721635 8.0703084,5.2911499 V 9.5255168 C 8.0705931,9.7443014 8.2478821,9.9215904 8.4666667,9.921875 8.6854513,9.9215903 8.8627402,9.7443014 8.8630249,9.5255168 V 5.2911499 c 2e-7,-0.2189863 -0.177372,-0.3965898 -0.3963582,-0.396875 z"
+            />
+            <path
+              d="M 6.3494832,4.8942749 C 6.130497,4.8945601 5.9531248,5.0721636 5.953125,5.2911499 V 9.5255168 C 5.9534097,9.7443014 6.1306986,9.9215903 6.3494832,9.921875 6.5682678,9.9215904 6.7455568,9.7443014 6.7458415,9.5255168 V 5.2911499 C 6.7458417,5.0721635 6.5684694,4.89456 6.3494832,4.8942749 Z"
+            />
+            <path
+              d="M 4.2343669,4.8942749 C 4.0145737,4.8934163 3.8359399,5.071355 3.8359416,5.2911499 V 9.5255168 C 3.8362263,9.7443014 4.0135152,9.9215903 4.2322998,9.921875 4.4510844,9.9215903 4.6283733,9.7443014 4.628658,9.5255168 l 0.00207,-4.2343669 c 2e-7,-0.2189875 -0.1773738,-0.3965914 -0.3963611,-0.396875 z"
+            />
+          </g>
+        </svg>
+      </div>
     </div>
 
-    <div class="control-group">
+
+
+    <div class="button-container">
+      <button id="create">Create</button>
+      <button id="cancel">Cancel</button>
+    </div>    
+    <button class="shader-editor-button" id="openShaderEditor">
+      Advanced Editor
+    </button>
+  </div>
+
+  <div class="preview-container">
+    <div class="pause-overlay">
       <label>
         <input type="checkbox" id="pauseTime" />
         Pause Animation
       </label>
     </div>
-
-    <button class="shader-editor-button" id="openShaderEditor">
-      Advanced Editor
-    </button>
-
-    <div class="button-container">
-      <button id="create">Create</button>
-      <button id="cancel">Cancel</button>
-    </div>
-  </div>
-
-  <div class="preview-container">
     <canvas id="glCanvas" width="512" height="512"></canvas>
   </div>
 </div>
@@ -423,7 +620,11 @@
       <button class="close-modal" id="closeModal">✕</button>
     </div>
     <div class="shader-modal-body">
-      <textarea id="shaderEditor" spellcheck="false" aria-label="GLSL Fragment Shader Code"></textarea>
+      <textarea
+        id="shaderEditor"
+        spellcheck="false"
+        aria-label="GLSL Fragment Shader Code"
+      ></textarea>
       <div class="error-message" id="shaderError"></div>
     </div>
     <div class="shader-modal-footer">
@@ -453,11 +654,6 @@
   
   const float MAX_LINES = 20.0;
   
-  float wave(vec2 uv, float speed, float yPos, float thickness, float softness) {
-    float falloff = smoothstep(1., 0.5, abs(uv.x));
-    float y = falloff * sin(iTime * speed + uv.x * 10.0) * yPos - uYOffset;
-    return 1.0 - smoothstep(thickness, thickness + softness + falloff * 0.0, abs(uv.y - y));
-  }
   
   void main() {
     vec2 uv = gl_FragCoord.xy / iResolution.y;
@@ -466,25 +662,7 @@
     vec3 gradCol1 = vec3(0.2, 0.1, 0.0);
     vec3 gradCol2 = vec3(0.2, 0.0, 0.2);
     col.xyz = mix(gradCol1, gradCol2, uv.x + uv.y);
-    
-    uv -= 0.5;
-    
-    const vec3 col1 = vec3(0.2, 0.5, 0.9);
-    const vec3 col2 = vec3(0.9, 0.3, 0.9);
-    float aaDy = iResolution.y * 0.000005;
-    
-    for (float i = 0.; i < MAX_LINES; i += 1.) {
-      if (i <= uLineCount) {
-        float t = i / (uLineCount - 1.0);
-        vec3 lineCol = mix(col1, col2, t);
-        float bokeh = pow(t, 3.0);
-        float thickness = 0.003;
-        float softness = aaDy + bokeh * 0.2;
-        float amp = uAmplitude - 0.05 * t;
-        float amt = max(0.0, pow(1.0 - bokeh, 2.0) * 0.9);
-        col.xyz += wave(uv, uSpeed * (1.0 + t), uAmplitude, thickness, softness) * lineCol * amt;
-      }
-    }
+
     
     gl_FragColor = col;
   }
@@ -671,17 +849,22 @@
   function recompileShader() {
     const shaderSource = document.getElementById("shaderEditor").value;
     const errorDiv = document.getElementById("shaderError");
-    
+
     // Clear previous error
     errorDiv.classList.remove("show");
     errorDiv.textContent = "";
 
     try {
       // Try to compile the new shader
-      const testFragmentShader = createShader(state.gl.FRAGMENT_SHADER, shaderSource);
-      
+      const testFragmentShader = createShader(
+        state.gl.FRAGMENT_SHADER,
+        shaderSource
+      );
+
       if (!testFragmentShader) {
-        const log = state.gl.getShaderInfoLog(state.gl.createShader(state.gl.FRAGMENT_SHADER));
+        const log = state.gl.getShaderInfoLog(
+          state.gl.createShader(state.gl.FRAGMENT_SHADER)
+        );
         throw new Error(log || "Shader compilation failed");
       }
 
@@ -701,7 +884,7 @@
       if (state.program) {
         state.gl.deleteProgram(state.program);
       }
-      
+
       state.program = newProgram;
       state.customFragmentShader = shaderSource;
 
@@ -740,13 +923,16 @@
 
     // Modal controls
     const modal = document.getElementById("shaderModal");
-    
-    document.getElementById("openShaderEditor").addEventListener("click", () => {
-      modal.classList.add("open");
-      // Update textarea with current shader (in case it was modified)
-      const currentShader = state.customFragmentShader || DEFAULT_FRAGMENT_SHADER;
-      document.getElementById("shaderEditor").value = currentShader;
-    });
+
+    document
+      .getElementById("openShaderEditor")
+      .addEventListener("click", () => {
+        modal.classList.add("open");
+        // Update textarea with current shader (in case it was modified)
+        const currentShader =
+          state.customFragmentShader || DEFAULT_FRAGMENT_SHADER;
+        document.getElementById("shaderEditor").value = currentShader;
+      });
 
     document.getElementById("closeModal").addEventListener("click", () => {
       modal.classList.remove("open");
