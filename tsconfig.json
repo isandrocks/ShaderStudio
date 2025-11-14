@@ -2,11 +2,13 @@
   "compilerOptions": {
     "target": "es6",
     "lib": ["es6", "dom"],
+    "jsx": "react",
     "strict": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "typeRoots": [
       "./node_modules/@types",
       "./node_modules/@figma"

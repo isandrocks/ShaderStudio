@@ -10,7 +10,7 @@ module.exports = (env, argv) => ({
   
   // Two entry points: UI and plugin controller
   entry: {
-    ui: "./src/app/index.ts",
+    ui: "./src/app/index.tsx",
     code: "./src/plugin/controller.ts"
   },
   
@@ -31,12 +31,20 @@ module.exports = (env, argv) => ({
         exclude: /node_modules/
       },
       
-      // CSS loader for UI
+      // CSS loader for UI with PostCSS/Tailwind
       {
         test: /\.css$/,
         use: [
           { loader: "style-loader" },  // Injects CSS into DOM
-          { loader: "css-loader" }     // Interprets @import and url()
+          { loader: "css-loader" },    // Interprets @import and url()
+          { 
+            loader: "postcss-loader",  // Processes Tailwind CSS v4
+            options: {
+              postcssOptions: {
+                config: path.resolve(__dirname, "postcss.config.js")
+              }
+            }
+          }
         ]
       },
       

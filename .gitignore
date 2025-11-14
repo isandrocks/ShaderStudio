@@ -13,3 +13,4 @@ code.js
 # Backup files
 ui copy.html
 ui.html.old
+src/app/App.tsx.old
