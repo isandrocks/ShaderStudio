@@ -3,7 +3,13 @@
 *.log.*
 node_modules
 
+# Build output
 out/
 dist/
+
+# Old build artifacts (no longer used after Webpack migration)
 code.js
+
+# Backup files
 ui copy.html
+ui.html.old
