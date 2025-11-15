@@ -67,6 +67,11 @@ module.exports = (env, argv) => ({
     path: path.resolve(__dirname, "dist")
   },
   
+  // Disable performance warnings
+  performance: {
+    hints: false
+  },
+  
   // Plugins
   plugins: [
     // Generate ui.html from template
