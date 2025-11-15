@@ -48,10 +48,12 @@ The UI follows a modular component structure:
 
 ```
 App.tsx (Main Component)
-├── ControlPanel (Left sidebar with parameter controls)
-│   └── SliderControl × 4 (Speed, Line Count, Amplitude, Y Offset)
-├── ShaderCanvas (WebGL canvas with pause overlay)
-└── ShaderModal (Advanced shader code editor)
+├── ControlPanel (Left sidebar with dynamic uniform controls)
+│   ├── PlusIcon (Add new uniform button)
+│   └── SliderControl × N (Dynamic uniforms with delete buttons)
+├── ShaderCanvas (WebGL canvas with pause/play toggle)
+├── ShaderModal (Advanced shader editor with Ace Editor)
+└── UniformConfigModal (Configure new uniform properties)
 ```
 
 **State Management:**
@@ -69,10 +71,11 @@ useEffect(() => {
 ```
 
 ### Shader Rendering Pipeline
-The WebGL shader rendering happens in `src/app/App.tsx`:
-1. User adjusts parameters via SliderControl components
+The WebGL shader rendering happens in `src/app/webgl.ts` (extracted from App.tsx):
+1. User adjusts dynamic uniforms via SliderControl components
 2. Real-time preview renders in `<canvas>` via `requestAnimationFrame`
-3. On "Create Rectangle" click:
+3. Dynamic uniforms are auto-injected into shader code via `buildFragmentSource()`
+4. On "Create Rectangle" click:
    - Plugin creates a 512×512 rectangle via `figma.createRectangle()`
    - Plugin sends `render-shader` message to UI
    - UI captures canvas as PNG blob via `canvas.toBlob()`
@@ -91,9 +94,14 @@ All cross-boundary messages use a `type` discriminator:
 `shaderStateRef` in `App.tsx` holds:
 - `gl`: WebGL context
 - `program`: Compiled shader program
-- `uniforms`: Locations for all shader uniforms (position, resolution, time, speed, lineCount, amplitude, yOffset)
+- `uniforms`: Base uniform locations (position, resolution, time)
+- `dynamicUniforms`: Cached locations for user-created uniforms
 
-Uniforms are updated every frame in `renderShader()` to reflect current param values from `paramsRef.current`.
+Dynamic uniforms are:
+- Stored in `dynamicUniforms` state array (each with id, name, value, min, max, step)
+- Auto-injected into shader source via `buildFragmentSource()` in `webgl.ts`
+- Updated every frame in `renderShader()` via `dynamicUniformsRef.current`
+- Can be added/removed/modified at runtime via UniformConfigModal
 
 ## Project Structure
 
@@ -101,11 +109,15 @@ Uniforms are updated every frame in `renderShader()` to reflect current param va
 src/
 ├── app/                          # React UI code
 │   ├── components/              # React components
-│   │   ├── ControlPanel.tsx    # Parameter controls sidebar
-│   │   ├── ShaderCanvas.tsx    # Canvas with pause overlay
-│   │   ├── ShaderModal.tsx     # Advanced shader editor modal
-│   │   └── SliderControl.tsx   # Reusable slider input
-│   ├── App.tsx                  # Main React component (WebGL logic)
+│   │   ├── ControlPanel.tsx    # Dynamic uniform controls sidebar
+│   │   ├── ShaderCanvas.tsx    # Canvas with pause/play toggle
+│   │   ├── ShaderModal.tsx     # Advanced shader editor with Ace Editor
+│   │   ├── SliderControl.tsx   # Reusable slider with delete button
+│   │   ├── UniformConfigModal.tsx # Configure new uniform properties
+│   │   ├── PlusIcon.tsx        # Add uniform icon button
+│   │   └── DeleteIcon.tsx      # Delete uniform icon button
+│   ├── App.tsx                  # Main React component (state management)
+│   ├── webgl.ts                 # WebGL logic (extracted from App.tsx)
 │   ├── index.tsx                # React root mount point
 │   ├── shaders.ts               # GLSL shader source constants
 │   ├── styles.css               # Tailwind CSS v4 styles
@@ -114,8 +126,8 @@ src/
     └── controller.ts            # Plugin controller entry point
 
 dist/                            # Build output (auto-generated, git-ignored)
-├── code.js                      # Compiled plugin code (~2.3 KB)
-├── ui.html                      # Compiled UI with inlined JS/CSS (~228 KB)
+├── code.js                      # Compiled plugin code (~2.9 KB)
+├── ui.html                      # Compiled UI with inlined JS/CSS (~839 KB)
 └── ui.js                        # Intermediate file (inlined into ui.html)
 ```
 
@@ -124,22 +136,59 @@ dist/                            # Build output (auto-generated, git-ignored)
 ### React Components
 
 - **`src/app/App.tsx`**: Main React component containing:
-  - WebGL initialization (`initWebGL`, `createShader`)
-  - Shader compilation and recompilation (`recompileShader`)
-  - Animation loop management (`renderLoop`, `renderShader`)
+  - State management for dynamic uniforms, modals, shader code, errors
+  - WebGL initialization via `initWebGL()` from webgl.ts
+  - Dynamic uniform CRUD operations (add, update, remove)
+  - Shader recompilation with `buildFragmentSource()` auto-injection
+  - Animation loop management (`renderLoop`)
   - Canvas capture for Figma (`captureShader`)
   - Event handlers for all user interactions
-  - State management with hooks and refs
+  - Refs for WebGL state, params, and dynamic uniforms
 
-- **`src/app/components/ControlPanel.tsx`**: Container for all parameter controls and action buttons (Create, Cancel, Advanced Editor)
+- **`src/app/webgl.ts`**: Extracted WebGL logic containing:
+  - `initWebGL()`: Initialize WebGL context, compile shaders, set up uniforms
+  - `buildFragmentSource()`: Auto-inject dynamic uniform declarations after precision statement
+  - `createShader()`: Compile vertex/fragment shaders with error handling
+  - `recompileShader()`: Hot-reload shader code with new uniforms
+  - `renderShader()`: Render frame with all uniform values
+  - `captureShaderAsImage()`: Capture canvas as PNG for Figma
+  - `DynamicUniform` interface: id, name, value, min, max, step
 
-- **`src/app/components/SliderControl.tsx`**: Reusable slider component with label, value display, and custom styling
+- **`src/app/components/ControlPanel.tsx`**: Dynamic uniform controls container:
+  - Renders all uniforms from `dynamicUniforms` array
+  - PlusIcon button to add new uniforms
+  - SliderControl for each uniform with delete button
+  - Action buttons: Create, Cancel, Advanced Editor
 
-- **`src/app/components/ShaderCanvas.tsx`**: Canvas element with pause checkbox overlay (forwards ref to App.tsx for WebGL context)
+- **`src/app/components/SliderControl.tsx`**: Reusable slider with:
+  - Label, value display, min/max/step controls
+  - Optional delete button via `onDelete` prop
+  - Custom Tailwind styling with `slider-input` utility
 
-- **`src/app/components/ShaderModal.tsx`**: Modal dialog for editing raw GLSL fragment shader code with error display
+- **`src/app/components/UniformConfigModal.tsx`**: Modal for creating new uniforms:
+  - Input for uniform name (validates GLSL identifier rules)
+  - Min/max/step/initial value inputs
+  - Create/Cancel buttons
+  - Validation and error display
 
-- **`src/app/shaders.ts`**: GLSL shader source code constants (`VERTEX_SHADER`, `FRAGMENT_SHADER`)
+- **`src/app/components/ShaderCanvas.tsx`**: Canvas with pause/play toggle:
+  - Forwards ref to App.tsx for WebGL context
+  - Pause/play button with ⏸︎/⏵︎ icons
+  - Toggles animation loop
+
+- **`src/app/components/ShaderModal.tsx`**: Advanced shader editor:
+  - React Ace editor component with GLSL syntax highlighting
+  - Monokai theme for dark UI consistency
+  - Line numbers, auto-indentation
+  - Error display as dismissible popup overlay
+  - Apply/Reset buttons
+  - `onClearError` callback for error dismissal
+
+- **`src/app/components/PlusIcon.tsx`**: Clickable + icon for adding uniforms
+
+- **`src/app/components/DeleteIcon.tsx`**: Clickable × icon for removing uniforms
+
+- **`src/app/shaders.ts`**: GLSL shader source constants (`VERTEX_SHADER`, `FRAGMENT_SHADER`)
 
 ### Core Files
 
@@ -227,16 +276,19 @@ No `autoprefixer` needed (built into Tailwind v4).
 - **Production mode**: Minified output with no source maps
 
 ### Build Output
-- `dist/code.js`: ~2.3 KB minified plugin controller
-- `dist/ui.html`: ~228 KB self-contained HTML with inlined React + Tailwind
+- `dist/code.js`: ~2.9 KB minified plugin controller
+- `dist/ui.html`: ~839 KB self-contained HTML with inlined React + Tailwind + Ace Editor
 - `dist/ui.js`: Intermediate file (not used by Figma, JS is inlined into ui.html)
+- Performance warnings disabled via `performance: { hints: false }` in webpack.config.js
 
 ### Dependencies
 ```json
 {
   "dependencies": {
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-ace": "^14.0.1",
+    "ace-builds": "^1.43.4"
   },
   "devDependencies": {
     "tailwindcss": "^4.1.17",
@@ -273,14 +325,22 @@ Run `npm run build:watch` during development. After making changes:
 - Check console for WebGL errors, shader compilation issues, or React errors
 - Inline source maps enabled in development builds for easier debugging
 
-### Adding New Parameters
-1. Add to `params` state in `App.tsx`
-2. Add uniform to `uniforms` interface and `initWebGL()`
-3. Update `renderShader()` to set uniform value from `paramsRef.current`
-4. Add SliderControl in `ControlPanel.tsx`
-5. Add corresponding GLSL uniform in `FRAGMENT_SHADER` (`shaders.ts`)
+### Adding New Uniforms
+**Via UI (Recommended)**:
+1. Click + icon in ControlPanel
+2. Fill in UniformConfigModal (name, min, max, step, value)
+3. Uniform auto-injected into shader via `buildFragmentSource()`
+4. SliderControl dynamically rendered
+
+**Via Code**:
+1. Add to `dynamicUniforms` state array in `App.tsx`
+2. `buildFragmentSource()` auto-injects declaration after `precision mediump float;`
+3. Uniform location cached in `shaderState.dynamicUniforms`
+4. Value updated every frame in `renderShader()`
 
 ### Modifying Shader Code
-- Default shader: Edit `FRAGMENT_SHADER` in `src/app/shaders.ts`
-- Runtime editing: Use "Advanced Editor" button to test custom GLSL code
-- Shader compilation errors display in modal and browser console
+- **Default shader**: Edit `FRAGMENT_SHADER` in `src/app/shaders.ts`
+- **Runtime editing**: Use "Advanced Editor" button (Ace Editor with GLSL syntax highlighting)
+- **Base shader reference**: `customFragmentShaderRef` tracks clean shader without auto-injected uniforms
+- **Shader compilation errors**: Display as dismissible popup overlay with full error log
+- **Debug logging**: Extensive console logs with `[functionName]` prefixes throughout pipeline
