@@ -21,21 +21,19 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
         className="absolute top-0 left-0 right-0 flex items-center p-[7px_11px]
           bg-transparent pointer-events-none"
       >
-        <label
+        <button
+          type="button"
+          onClick={() => onPauseChange(!isPaused)}
+          aria-pressed={isPaused ? "true" : "false"}
+          aria-label={isPaused ? "Resume animation" : "Pause animation"}
           className="flex items-center
             font-['Liberation_Sans','Inter',sans-serif] text-xs
-            text-[rgba(179,179,179,0.56)] font-normal cursor-pointer
-            pointer-events-auto m-0 gap-2"
+            text-[rgba(179,179,179,0.75)] font-medium pointer-events-auto m-0
+            gap-2 px-2 py-1 rounded-md bg-[rgba(0,0,0,0.35)] backdrop-blur-sm
+            transition-colors duration-150 hover:text-white active:scale-[0.97]"
         >
-          <input
-            type="checkbox"
-            checked={isPaused}
-            onChange={(e) => onPauseChange(e.target.checked)}
-            className="w-4 h-4 m-0 cursor-pointer accent-white border
-              border-[#767676] rounded-[2.5px]"
-          />
-          Pause Animation
-        </label>
+          <span className="text-sm select-none">{isPaused ? "⏸︎" : "⏵︎"}</span>
+        </button>
       </div>
       <canvas
         ref={canvasRef}

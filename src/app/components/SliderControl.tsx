@@ -1,4 +1,5 @@
 import React from "react";
+import DeleteIcon from "./DeleteIcon";
 
 interface SliderControlProps {
   id: string;
@@ -27,9 +28,7 @@ const SliderControl: React.FC<SliderControlProps> = ({
           text-gray-200"
       >
         <span>{label}</span>
-        <span
-          className="text-primary font-bold min-w-10 text-right pl-[18px]"
-        >
+        <span className="text-primary font-bold min-w-10 text-right pl-[18px]">
           {format(value)}
         </span>
       </label>
@@ -44,6 +43,7 @@ const SliderControl: React.FC<SliderControlProps> = ({
           title={label}
           className="slider-input"
         />
+        <DeleteIcon />
       </div>
     </div>
   );

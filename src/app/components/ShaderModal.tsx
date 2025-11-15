@@ -23,8 +23,8 @@ const ShaderModal: React.FC<ShaderModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 flex items-center justify-center
-        z-50 p-5 overflow-hidden"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50
+        p-5 overflow-hidden"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -42,17 +42,14 @@ const ShaderModal: React.FC<ShaderModalProps> = ({
           <button
             onClick={onClose}
             className="bg-transparent border-none text-[#999999] text-xl
-              cursor-pointer p-0 w-6 h-6 flex items-center justify-end rounded
-              transition-all duration-150 hover:bg-[#3c3c3c] hover:text-white
-              shrink-0"
+              cursor-pointer p-0 w-6 h-6 flex items-center justify-center
+              rounded transition-all duration-150 hover:bg-[#3c3c3c]
+              hover:text-white shrink-0"
           >
             ✕
           </button>
         </div>
-        <div
-          className="p-5 flex-1 overflow-y-auto flex flex-col gap-3
-            overflow-hidden"
-        >
+        <div className="p-5 flex-1 flex flex-col gap-3 overflow-hidden">
           <textarea
             value={shaderCode}
             onChange={(e) => onShaderChange(e.target.value)}

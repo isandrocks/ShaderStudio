@@ -1,5 +1,6 @@
 import React from "react";
 import SliderControl from "./SliderControl";
+import PlusIcon from "./PlusIcon";
 
 interface ControlPanelProps {
   params: {
@@ -26,6 +27,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       className="w-60 bg-[#2c2c2c] rounded-lg p-4 flex flex-col gap-4 border
         border-[#3c3c3c]"
     >
+      <PlusIcon />
       <SliderControl
         id="speed"
         label="Speed:"
