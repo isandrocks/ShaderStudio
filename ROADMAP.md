@@ -462,6 +462,13 @@ interface SavedShader {
 **Timeline**: 4-5 weeks
 6. ⚠️ **Visual Variable System** (High complexity, requires UX design)
 
+### Phase 4: Extended Features (Post-MVP)
+**Timeline**: 6-10 weeks
+7. 🎨 **Texture Support** (Image uploads as sampler2D uniforms)
+8. 🎵 **Audio Reactivity** (Uniforms controlled by audio input)
+9. 🤝 **Collaborative Editing** (Real-time multi-user shader editing)
+10. 🤖 **AI Shader Generation** (Natural language → GLSL code)
+
 ---
 
 ## Technical Considerations
@@ -525,17 +532,504 @@ interface SavedShader {
 
 ---
 
+---
+
+## 7. Texture Support (sampler2D Uniforms)
+
+### Current State
+- Only numeric uniforms supported (float, vec3, vec4)
+- No way to use images/textures in shaders
+
+### Proposed Changes
+
+#### Architecture Changes
+- **Extend uniform type system**:
+  ```typescript
+  interface DynamicUniform {
+    id: string;
+    name: string;
+    type: 'float' | 'vec3' | 'vec4' | 'sampler2D';
+    value: number | [number, number, number] | [number, number, number, number] | WebGLTexture;
+    imageData?: {
+      url: string;
+      width: number;
+      height: number;
+      blob: Blob;
+    };
+  }
+  ```
+
+- **Texture management system**:
+  - Upload images via file input or drag-and-drop
+  - Convert uploaded images to WebGL textures
+  - Support common formats: PNG, JPG, WebP, SVG
+  - Texture filtering options: nearest, linear, mipmap
+  - Wrapping modes: repeat, clamp, mirror
+
+- **Update WebGL pipeline**:
+  - Load images and create textures: `gl.createTexture()`
+  - Bind textures to texture units: `gl.activeTexture(gl.TEXTURE0)`
+  - Pass texture unit to shader: `gl.uniform1i()`
+  - Handle texture loading async (show loading state)
+
+#### UI Changes
+- **New component**: `TextureUploadControl.tsx`
+  - File upload button
+  - Drag-and-drop zone
+  - Thumbnail preview of uploaded image
+  - Texture settings: filtering, wrapping, scale
+  
+- **UniformConfigModal**: Add `sampler2D` option
+- **ControlPanel**: Show texture preview thumbnail
+
+#### Implementation Details
+```typescript
+function loadTexture(gl: WebGLRenderingContext, imageUrl: string): WebGLTexture {
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  
+  // Placeholder pixel while image loads
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+    new Uint8Array([255, 0, 255, 255]));
+  
+  const image = new Image();
+  image.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+  };
+  image.src = imageUrl;
+  
+  return texture;
+}
+```
+
+#### Shader Usage Example
+```glsl
+uniform sampler2D uTexture;
+uniform vec2 iResolution;
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / iResolution;
+  vec4 texColor = texture2D(uTexture, uv);
+  gl_FragColor = texColor;
+}
+```
+
+#### Challenges
+- **File size limits**: Large images may hit Figma's postMessage limits
+- **Storage**: Need to serialize texture data for save/load
+- **Performance**: Multiple textures increase GPU memory usage
+- **Formats**: Handle different image formats and sizes
+
+#### Bundle Impact
+- Image processing libraries (if needed): ~20-40 KB
+
+#### Complexity: **Medium-High**
+**Estimated Time**: 8-12 hours
+
+---
+
+## 8. Audio Reactivity
+
+### Current State
+- Uniforms controlled manually via sliders
+- No external input sources
+
+### Proposed Changes
+
+#### Architecture Changes
+- **Audio analysis system**:
+  ```typescript
+  interface AudioReactiveUniform {
+    uniformId: string;
+    audioSource: 'microphone' | 'file';
+    reactivityType: 'volume' | 'frequency' | 'beat' | 'waveform';
+    frequencyRange?: { min: number, max: number }; // Hz
+    smoothing: number; // 0-1
+    multiplier: number; // Scale audio value
+    offset: number; // Add constant offset
+  }
+  ```
+
+- **Web Audio API integration**:
+  - Request microphone access: `navigator.mediaDevices.getUserMedia()`
+  - Analyze audio with `AnalyserNode`
+  - Extract frequency data, volume, beat detection
+  - Map audio values to uniform ranges
+
+- **Audio processing pipeline**:
+  ```typescript
+  const audioContext = new AudioContext();
+  const analyser = audioContext.createAnalyser();
+  analyser.fftSize = 2048;
+  const dataArray = new Uint8Array(analyser.frequencyBinCount);
+  
+  function analyzeAudio() {
+    analyser.getByteFrequencyData(dataArray);
+    // Process frequency data and update uniforms
+  }
+  ```
+
+#### UI Changes
+- **New component**: `AudioReactivityPanel.tsx`
+  - Enable/disable audio input
+  - Select audio source (mic/file)
+  - Link uniforms to audio features
+  - Visual audio waveform/spectrum display
+  - Sensitivity/multiplier controls
+
+- **AudioBindingModal**: Configure how audio affects uniforms
+  - Choose reactivity type (volume/frequency/beat)
+  - Set frequency range for frequency-based
+  - Adjust smoothing and scaling
+
+#### Implementation Details
+- **Beat detection**: Analyze bass frequencies for rhythm
+- **Frequency bands**: Map different frequency ranges to different uniforms
+- **Smoothing**: Apply exponential moving average to prevent jitter
+- **Visualization**: Show real-time audio spectrum analyzer
+
+#### Use Cases
+- Music visualizers
+- Audio-reactive backgrounds
+- VJ tools for live performances
+- Interactive sound-based art
+
+#### Challenges
+- **Permissions**: Requires microphone access (user prompt)
+- **Performance**: Audio analysis + shader rendering can be intensive
+- **Latency**: Minimize delay between audio input and visual response
+- **Browser support**: Web Audio API support varies
+
+#### Bundle Impact
+- Web Audio API polyfills (if needed): ~10-20 KB
+
+#### Complexity: **High**
+**Estimated Time**: 12-18 hours
+
+---
+
+## 9. Collaborative Editing
+
+### Current State
+- Single-user plugin instance
+- No sharing or real-time collaboration
+
+### Proposed Changes
+
+#### Architecture Changes
+- **Requires network access** (major change to `manifest.json`)
+- **WebSocket server** for real-time sync:
+  ```typescript
+  interface CollaborationSession {
+    sessionId: string;
+    creator: string;
+    participants: User[];
+    shaderState: {
+      code: string;
+      uniforms: DynamicUniform[];
+      version: number;
+    };
+  }
+  ```
+
+- **Operational Transform (OT) or CRDT** for conflict resolution
+- **Presence awareness**: Show who's editing what
+- **Cursor tracking**: See other users' cursors in code editor
+- **Change broadcasting**: Real-time uniform updates, code changes
+
+#### Backend Requirements
+- **WebSocket server**: Node.js + Socket.io or similar
+- **Database**: Store sessions, user state
+- **Authentication**: User accounts or anonymous sessions
+- **Rate limiting**: Prevent abuse
+- **Session management**: Create, join, leave sessions
+
+#### UI Changes
+- **New components**:
+  - `CollaborationPanel.tsx` - Session management
+  - `ParticipantList.tsx` - Show active users
+  - `ShareDialog.tsx` - Generate shareable session links
+  
+- **Code editor enhancements**:
+  - Multi-colored cursors for each user
+  - User avatars/names
+  - Lock/unlock sections to prevent conflicts
+
+#### Implementation Details
+```typescript
+// Client-side WebSocket
+const socket = io('wss://shader-studio-collab.example.com');
+
+socket.on('uniform-update', (data) => {
+  setDynamicUniforms(prevUniforms => 
+    updateUniform(prevUniforms, data.uniformId, data.value)
+  );
+});
+
+socket.emit('code-change', { 
+  sessionId, 
+  userId, 
+  delta: codeDelta 
+});
+```
+
+#### Challenges
+- **Network access approval**: Major Figma plugin review requirement
+- **Infrastructure costs**: Running servers for real-time sync
+- **Conflict resolution**: Handle simultaneous edits gracefully
+- **Security**: Prevent malicious code injection
+- **Scalability**: Support many concurrent sessions
+- **Offline mode**: Graceful degradation without network
+
+#### Alternative Approach
+- **Share via export/import**: Users export JSON, share manually
+- **Figma document storage**: Use `setPluginData()` for team files
+- **Git-style workflow**: Merge changes offline
+
+#### Complexity: **Very High**
+**Estimated Time**: 40-60 hours (frontend + backend)
+
+---
+
+## 10. AI Shader Generation
+
+### Current State
+- Users write GLSL code manually
+- Requires shader programming knowledge
+
+### Proposed Changes
+
+#### Architecture Changes
+- **AI integration options**:
+  
+  **Option A: API-based (OpenAI, Anthropic)**
+  - Requires network access
+  - Send natural language prompt to AI API
+  - Receive generated GLSL code
+  - Parse and validate output
+  
+  **Option B: Local AI model**
+  - Use TensorFlow.js or ONNX Runtime
+  - Load fine-tuned model for GLSL generation
+  - Run inference in browser
+  - No network required (but large bundle size)
+  
+  **Option C: Figma AI Integration (Recommended)**
+  - Use Figma's native AI capabilities
+  - No network access approval needed (uses Figma's infrastructure)
+  - Access via Figma Plugin API if available
+  - Potential methods:
+    - `figma.ai.generateText()` or similar API (if exposed to plugins)
+    - Leverage existing Figma AI features within plugin context
+    - Prompt engineering to get shader-specific outputs
+  - **Advantages**:
+    - No external API costs
+    - No bundle size increase
+    - Seamless integration with Figma ecosystem
+    - Already approved by Figma security review
+  - **Challenges**:
+    - API availability - need to check if Figma exposes AI to plugins
+    - May require specific plugin capabilities/permissions
+    - Limited control over AI model and prompting
+    - Dependent on Figma's AI roadmap and features
+
+- **Prompt engineering system**:
+  ```typescript
+  interface ShaderPrompt {
+    userInput: string; // "Create a plasma effect with purple colors"
+    context: {
+      existingUniforms: string[];
+      targetResolution: string;
+      style: 'simple' | 'complex';
+    };
+    generatedCode?: string;
+    confidence?: number;
+  }
+  ```
+
+- **Code validation pipeline**:
+  1. Generate GLSL code from prompt
+  2. Validate syntax (check for compile errors)
+  3. Test compile in WebGL context
+  4. If errors, retry with error context
+  5. Insert generated code into editor
+
+#### UI Changes
+- **New component**: `AIGeneratorModal.tsx`
+  - Text input for natural language description
+  - Style selector (minimal/detailed)
+  - "Generate" button
+  - Preview of generated shader
+  - "Refine" button to iterate on result
+  - "Accept" to insert into editor
+
+- **Prompt examples**:
+  - "Create a wavy gradient that transitions from blue to pink"
+  - "Make a pulsing circle that responds to time"
+  - "Generate a grid of rotating squares"
+  - "Create a starfield effect"
+
+#### Implementation Details
+
+**Using Figma AI** (Option C - Recommended):
+```typescript
+// Check if Figma AI API is available
+async function generateShaderWithFigmaAI(prompt: string): Promise<string> {
+  try {
+    // Hypothetical API - actual implementation depends on Figma's plugin API
+    if (!figma.ai) {
+      throw new Error('Figma AI not available in this version');
+    }
+    
+    // Construct shader-specific prompt
+    const systemPrompt = `Generate a GLSL ES 1.0 fragment shader that ${prompt}. 
+      Include precision statement, uniforms for iResolution, iTime, and main() function.
+      Output only valid GLSL code without markdown formatting.`;
+    
+    const response = await figma.ai.generateText({
+      prompt: systemPrompt,
+      maxTokens: 1000,
+      temperature: 0.7
+    });
+    
+    // Extract and validate GLSL code
+    const glslCode = extractGLSLCode(response.text);
+    return glslCode;
+  } catch (error) {
+    console.error('Figma AI generation failed:', error);
+    throw error;
+  }
+}
+
+// Fallback validation step
+function validateGeneratedShader(code: string): boolean {
+  // Check for required elements
+  const hasPrecision = /precision\s+\w+\s+float;/.test(code);
+  const hasMainFunction = /void\s+main\s*\(\s*\)/.test(code);
+  const hasFragColor = /gl_FragColor/.test(code);
+  
+  return hasPrecision && hasMainFunction && hasFragColor;
+}
+```
+
+**Alternative: Use Figma's Chat/AI UI**:
+If direct API access is not available, implement a workflow:
+1. User enters prompt in plugin
+2. Plugin generates instructions for Figma AI
+3. User pastes prompt into Figma's AI chat
+4. User copies generated shader back to plugin
+5. Plugin validates and inserts code
+
+**Using OpenAI API** (Option A):
+```typescript
+async function generateShader(prompt: string): Promise<string> {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4',
+      messages: [{
+        role: 'system',
+        content: 'You are a GLSL shader expert. Generate fragment shader code.'
+      }, {
+        role: 'user',
+        content: prompt
+      }]
+    })
+  });
+  
+  const data = await response.json();
+  return extractGLSLCode(data.choices[0].message.content);
+}
+```
+
+**Fine-tuning approach**:
+- Collect dataset of (description, GLSL code) pairs
+- Fine-tune GPT-4 or similar on shader generation
+- Include common GLSL patterns and best practices
+
+#### Use Cases
+- **Beginners**: Generate starter shaders from ideas
+- **Rapid prototyping**: Quickly test visual concepts
+- **Learning tool**: See how descriptions map to code
+- **Iteration**: Refine shaders with natural language
+
+#### Challenges
+- **Figma AI API availability**: Need to verify if/when Figma exposes AI to plugins
+- **API discovery**: Check Figma Plugin API documentation for AI capabilities
+- **Prompt engineering**: Optimize prompts for shader generation specifically
+- **API costs** (External APIs): Each generation costs money (OpenAI pricing)
+- **Network requirement** (External APIs): Needs internet connection
+- **Quality control**: AI may generate invalid/poor shaders
+- **Rate limits**: API rate limiting may throttle users
+- **Privacy** (External APIs): Sending user prompts to third-party API
+- **Bundle size** (Local models): Local models are 50-200+ MB
+
+**Research Required**:
+1. Test Figma's AI with shader generation prompts to validate quality
+2. Check Figma Plugin API docs for `figma.ai` or similar namespace
+3. Contact Figma support/community about AI plugin integration
+4. Monitor Figma's changelog for AI-related plugin features
+
+#### Alternative Features
+- **AI shader optimization**: Improve existing shader performance
+- **AI documentation**: Generate comments for shader code
+- **AI debugging**: Suggest fixes for shader errors
+- **Style transfer**: "Make this shader look like that one"
+
+#### Complexity: **Very High**
+**Estimated Time**: 
+- Option A (External API): 15-20 hours
+- Option B (Local model): 40-60 hours
+- Option C (Figma AI): 8-12 hours (if API available) / 4-6 hours (assisted workflow)
+
+**Recommended Approach**: 
+Start with Option C (Figma AI) as it provides the best integration with the Figma ecosystem, requires no network approval, and has zero API costs. If Figma's AI API is not yet available to plugins, implement the assisted workflow where users can easily copy prompts to Figma's AI and paste results back. Monitor Figma's plugin API updates for direct AI access in future versions.
+
+---
+
+## Implementation Priority & Timeline (Updated)
+
+### Phase 1: Foundation (MVP Enhancements)
+**Timeline**: 2-3 weeks
+1. ✅ **Preset Shader Library** (Low complexity, high value)
+2. ✅ **Shader Save/Load System** (Option A: Local Storage)
+3. ✅ **HTML Export** (Medium complexity, high shareability)
+
+### Phase 2: Advanced Controls
+**Timeline**: 3-4 weeks
+4. ✅ **Multi-Type Uniform Support** (vec3/vec4 color pickers)
+5. ⚠️ **Video Export** (High complexity, performance-intensive)
+
+### Phase 3: Advanced Features
+**Timeline**: 4-5 weeks
+6. ⚠️ **Visual Variable System** (High complexity, requires UX design)
+
+### Phase 4: Extended Features (Post-MVP)
+**Timeline**: 6-10 weeks
+7. 🎨 **Texture Support** (8-12 hours) - Medium-High complexity
+8. 🎵 **Audio Reactivity** (12-18 hours) - High complexity
+9. 🤝 **Collaborative Editing** (40-60 hours) - Very High complexity, requires infrastructure
+10. 🤖 **AI Shader Generation** (15-60 hours depending on approach) - Very High complexity
+
+---
+
 ## Future Considerations (Beyond Roadmap)
 
-### Additional Features
-- **Texture support**: Upload images to use as `sampler2D` uniforms
-- **Audio reactivity**: Uniforms controlled by audio input
-- **Collaborative editing**: Real-time multi-user shader editing
-- **AI shader generation**: Natural language → GLSL code
-- **Performance profiler**: Analyze shader GPU cost
-- **Mobile preview**: Test shader on mobile viewport sizes
-- **Version control**: Track shader history and rollback
-- **Community marketplace**: Share/sell shader presets
+### Additional Polish Features
+- **Performance profiler**: Analyze shader GPU cost and suggest optimizations
+- **Mobile preview**: Test shader rendering on mobile viewport sizes
+- **Version control**: Track shader edit history with rollback capability
+- **Community marketplace**: Share/sell shader presets with other users
+- **Shader templates**: More structured starting points (e.g., "2D shapes", "3D raymarching")
+- **Multi-pass rendering**: Support for render-to-texture and post-processing effects
+- **Custom texture synthesis**: Generate procedural textures (noise, patterns) without uploads
+- **Shader minifier**: Optimize GLSL code for smaller bundle size
 
 ### Technical Debt
 - Migrate from Webpack 4 to Webpack 5 or Vite
