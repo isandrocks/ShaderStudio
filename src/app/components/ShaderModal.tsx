@@ -1,4 +1,9 @@
 import React from "react";
+import AceEditor from "react-ace";
+
+import "ace-builds/src-noconflict/mode-glsl";
+import "ace-builds/src-noconflict/theme-monokai";
+import "ace-builds/src-noconflict/ext-language_tools";
 
 interface ShaderModalProps {
   isOpen: boolean;
@@ -8,6 +13,7 @@ interface ShaderModalProps {
   onShaderChange: (code: string) => void;
   onApply: () => void;
   onReset: () => void;
+  onClearError: () => void;
 }
 
 const ShaderModal: React.FC<ShaderModalProps> = ({
@@ -18,6 +24,7 @@ const ShaderModal: React.FC<ShaderModalProps> = ({
   onShaderChange,
   onApply,
   onReset,
+  onClearError,
 }) => {
   if (!isOpen) return null;
 
@@ -49,23 +56,78 @@ const ShaderModal: React.FC<ShaderModalProps> = ({
             ✕
           </button>
         </div>
-        <div className="p-5 flex-1 flex flex-col gap-3 overflow-hidden">
-          <textarea
+        <div className="p-5 flex-1 flex flex-col overflow-hidden">
+          <AceEditor
+            mode="glsl"
+            theme="monokai"
             value={shaderCode}
-            onChange={(e) => onShaderChange(e.target.value)}
-            spellCheck={false}
-            className="w-full min-h-[400px] bg-[#1e1e1e] text-[#d4d4d4]
-              font-mono text-xs leading-relaxed p-4 border border-[#3c3c3c]
-              rounded-md resize-y outline-none focus:border-primary"
-            aria-label="GLSL Fragment Shader Code"
+            onChange={onShaderChange}
+            name="shader-editor"
+            editorProps={{ $blockScrolling: true }}
+            fontSize={12}
+            showPrintMargin={false}
+            showGutter={true}
+            highlightActiveLine={true}
+            width="100%"
+            height="400px"
+            setOptions={{
+              enableBasicAutocompletion: true,
+              enableLiveAutocompletion: false,
+              enableSnippets: false,
+              showLineNumbers: true,
+              tabSize: 2,
+              useWorker: false, // Disable worker to avoid errors in Figma plugin context
+            }}
+            style={{
+              fontFamily: 'Consolas, "Courier New", monospace',
+              borderRadius: "6px",
+              border: "1px solid #3c3c3c",
+            }}
           />
           {error && (
             <div
-              className="bg-[#5c2020] border border-[#8b3333] text-[#ff6b6b] p-3
-                rounded-md text-xs max-h-[120px] overflow-y-auto font-mono
-                leading-tight"
+              className="fixed inset-0 bg-black/60 flex items-center
+                justify-center z-60"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  onClearError();
+                }
+              }}
             >
-              {error}
+              <div
+                className="bg-[#2c2c2c] border border-[#8b3333] rounded-lg
+                  max-w-[600px] w-full mx-4 max-h-[80vh] flex flex-col
+                  shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+              >
+                <div
+                  className="p-3 border-b border-[#8b3333] flex justify-between
+                    items-center shrink-0"
+                >
+                  <h4 className="text-sm font-semibold text-[#ff6b6b] m-0">
+                    Shader Error
+                  </h4>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClearError();
+                    }}
+                    className="bg-transparent border-none text-[#ff6b6b] text-xl
+                      cursor-pointer p-0 w-6 h-6 flex items-center
+                      justify-center rounded transition-all duration-150
+                      hover:bg-[#5c2020] hover:text-white shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="p-4 overflow-y-auto flex-1">
+                  <pre
+                    className="text-[#ff6b6b] font-mono text-xs leading-tight
+                      m-0 whitespace-pre-wrap"
+                  >
+                    {error}
+                  </pre>
+                </div>
+              </div>
             </div>
           )}
         </div>

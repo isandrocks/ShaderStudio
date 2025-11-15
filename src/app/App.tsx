@@ -2,28 +2,58 @@ import React, { useRef, useEffect, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
 import ShaderCanvas from "./components/ShaderCanvas";
 import ShaderModal from "./components/ShaderModal";
+import UniformConfigModal from "./components/UniformConfigModal";
 import { FRAGMENT_SHADER } from "./shaders";
 import {
   ShaderState,
+  DynamicUniform,
   initWebGL,
   renderShader,
   captureShaderAsImage,
   recompileShader,
+  buildFragmentSource,
 } from "./webgl";
 
 const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [params, setParams] = useState({
-    speed: 1.0,
-    lineCount: 10.0,
-    amplitude: 0.2,
-    yOffset: 0.0,
     paused: false,
     pausedTime: 0.0,
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [shaderCode, setShaderCode] = useState(FRAGMENT_SHADER);
   const [shaderError, setShaderError] = useState("");
+  const [criticalError, setCriticalError] = useState<string | null>(null);
+  const [dynamicUniforms, setDynamicUniforms] = useState<DynamicUniform[]>([
+    { id: "base-speed", name: "uSpeed", value: 1.0, min: 0, max: 3, step: 0.1 },
+    {
+      id: "base-lineCount",
+      name: "uLineCount",
+      value: 10.0,
+      min: 1,
+      max: 20,
+      step: 1,
+    },
+    {
+      id: "base-amplitude",
+      name: "uAmplitude",
+      value: 0.2,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+    },
+    {
+      id: "base-yOffset",
+      name: "uYOffset",
+      value: 0.0,
+      min: -0.5,
+      max: 0.5,
+      step: 0.01,
+    },
+  ]);
+
+  console.log("[App] Rendered with", dynamicUniforms.length, "uniforms");
 
   const shaderStateRef = useRef<ShaderState>({
     gl: null,
@@ -34,6 +64,7 @@ const App: React.FC = () => {
   const animationFrameRef = useRef<number | undefined>(undefined);
   const customFragmentShaderRef = useRef<string | null>(null);
   const paramsRef = useRef(params);
+  const dynamicUniformsRef = useRef(dynamicUniforms);
 
   const handleShaderError = (error: string | null) => {
     parent.postMessage({ pluginMessage: { type: "shader-error", error } }, "*");
@@ -46,16 +77,24 @@ const App: React.FC = () => {
   };
 
   const renderLoop = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    renderShader(
-      canvas,
-      shaderStateRef.current,
-      paramsRef.current,
-      getCurrentTime(),
-    );
-    animationFrameRef.current = requestAnimationFrame(renderLoop);
+      renderShader(
+        canvas,
+        shaderStateRef.current,
+        { ...paramsRef.current, dynamicUniforms: dynamicUniformsRef.current },
+        getCurrentTime(),
+      );
+      animationFrameRef.current = requestAnimationFrame(renderLoop);
+    } catch (error) {
+      console.error("[renderLoop] Error:", error);
+      setCriticalError(`Render loop failed: ${(error as Error).message}`);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    }
   };
 
   const captureShader = () => {
@@ -65,7 +104,7 @@ const App: React.FC = () => {
     captureShaderAsImage(
       canvas,
       shaderStateRef.current,
-      paramsRef.current,
+      { ...paramsRef.current, dynamicUniforms: dynamicUniformsRef.current },
       getCurrentTime(),
       (imageData) => {
         parent.postMessage(
@@ -82,31 +121,130 @@ const App: React.FC = () => {
   };
 
   const handleRecompileShader = (newShaderCode: string): boolean => {
-    const gl = shaderStateRef.current.gl;
-    if (!gl) return false;
+    try {
+      console.log("[handleRecompileShader] START");
+      console.log(
+        "[handleRecompileShader] Recompiling with",
+        dynamicUniforms.length,
+        "uniforms:",
+        dynamicUniforms.map((u) => u.name).join(", "),
+      );
+      console.log(
+        "[handleRecompileShader] Input shader code length:",
+        newShaderCode.length,
+      );
+      console.log(
+        "[handleRecompileShader] Input shader first 300 chars:",
+        newShaderCode.substring(0, 300),
+      );
 
-    setShaderError("");
+      const gl = shaderStateRef.current.gl;
+      if (!gl) {
+        console.error("[handleRecompileShader] No GL context");
+        return false;
+      }
 
-    const success = recompileShader(
-      gl,
-      shaderStateRef,
-      newShaderCode,
-      (error) => {
+      setShaderError("");
+
+      console.log("[handleRecompileShader] Calling buildFragmentSource...");
+      const combined = buildFragmentSource(newShaderCode, dynamicUniforms);
+      console.log(
+        "[handleRecompileShader] Combined shader length:",
+        combined.length,
+      );
+      console.log(
+        "[handleRecompileShader] Combined shader first 500 chars:",
+        combined.substring(0, 500),
+      );
+
+      console.log("[handleRecompileShader] Calling recompileShader...");
+      const success = recompileShader(gl, shaderStateRef, combined, (error) => {
         if (error) {
+          console.error(
+            "[handleRecompileShader] Shader error from WebGL:",
+            error,
+          );
+          console.error("[handleRecompileShader] Failed shader source:");
+          console.error(combined);
           setShaderError("Shader Error: " + error);
         }
-      },
-    );
+      });
 
-    if (success) {
-      customFragmentShaderRef.current = newShaderCode;
+      if (success) {
+        customFragmentShaderRef.current = newShaderCode;
+        console.log(
+          "[handleRecompileShader] SUCCESS - Shader compiled and applied",
+        );
+      } else {
+        console.error(
+          "[handleRecompileShader] FAILED - Shader compilation returned false",
+        );
+      }
+
+      return success;
+    } catch (error) {
+      console.error("[handleRecompileShader] EXCEPTION:", error);
+      console.error("[handleRecompileShader] Stack:", (error as Error).stack);
+      setCriticalError(
+        `Shader compilation failed: ${(error as Error).message}`,
+      );
+      return false;
     }
-
-    return success;
   };
 
-  const handleParamChange = (key: string, value: number) => {
-    setParams((prev) => ({ ...prev, [key]: value }));
+  const addUniform = (config: {
+    name: string;
+    min: number;
+    max: number;
+    step: number;
+    value: number;
+  }) => {
+    try {
+      console.log("[addUniform] Adding uniform:", config);
+      const existingNames = new Set(dynamicUniforms.map((u) => u.name));
+      if (existingNames.has(config.name)) {
+        setShaderError(`Uniform "${config.name}" already exists`);
+        return;
+      }
+
+      const newU: DynamicUniform = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        ...config,
+      };
+      setDynamicUniforms((prev) => {
+        console.log("[addUniform] New uniforms count:", prev.length + 1);
+        return [...prev, newU];
+      });
+      setIsConfigModalOpen(false);
+    } catch (error) {
+      console.error("[addUniform] Error:", error);
+      setCriticalError(`Failed to add uniform: ${(error as Error).message}`);
+    }
+  };
+
+  const updateUniform = (id: string, value: number) => {
+    try {
+      setDynamicUniforms((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, value } : u)),
+      );
+    } catch (error) {
+      console.error("[updateUniform] Error:", error);
+      setCriticalError(`Failed to update uniform: ${(error as Error).message}`);
+    }
+  };
+
+  const removeUniform = (id: string) => {
+    try {
+      console.log("[removeUniform] Removing uniform:", id);
+      setDynamicUniforms((prev) => {
+        const newUniforms = prev.filter((u) => u.id !== id);
+        console.log("[removeUniform] New uniforms count:", newUniforms.length);
+        return newUniforms;
+      });
+    } catch (error) {
+      console.error("[removeUniform] Error:", error);
+      setCriticalError(`Failed to remove uniform: ${(error as Error).message}`);
+    }
   };
 
   const handlePauseChange = (checked: boolean) => {
@@ -134,8 +272,94 @@ const App: React.FC = () => {
   };
 
   const handleApplyShader = () => {
-    if (handleRecompileShader(shaderCode)) {
+    try {
+      console.log("[handleApplyShader] START");
+      console.log(
+        "[handleApplyShader] Current shaderCode length:",
+        shaderCode.length,
+      );
+      console.log(
+        "[handleApplyShader] Current shaderCode first 300 chars:",
+        shaderCode.substring(0, 300),
+      );
+
+      // The shader code in the editor might have manually edited uniforms
+      // We need to treat it as the new "base" shader and recompile
       setShaderError("");
+
+      // Strip out any auto-injected uniforms to get clean base code
+      // (User might have manually added/removed uniforms in the editor)
+      const cleanedCode = stripInjectedUniforms(shaderCode);
+      console.log(
+        "[handleApplyShader] Cleaned code length:",
+        cleanedCode.length,
+      );
+
+      // Now recompile with the cleaned code as the new base
+      if (handleRecompileShader(cleanedCode)) {
+        console.log("[handleApplyShader] Recompile SUCCESS");
+        // Update the base shader reference
+        customFragmentShaderRef.current = cleanedCode;
+        // Update editor with the version that has uniforms injected
+        const injectedCode = injectUniforms(cleanedCode);
+        setShaderCode(injectedCode);
+      } else {
+        console.error("[handleApplyShader] Recompile FAILED");
+      }
+    } catch (error) {
+      console.error("[handleApplyShader] EXCEPTION:", error);
+      console.error("[handleApplyShader] Stack:", (error as Error).stack);
+      setShaderError(`Apply failed: ${(error as Error).message}`);
+    }
+  };
+
+  // Remove auto-injected uniform declarations (but keep user-added ones)
+  const stripInjectedUniforms = (code: string): string => {
+    try {
+      console.log("[stripInjectedUniforms] Input length:", code.length);
+      // Remove uniform declarations that match our dynamic uniforms (non-base)
+      let result = code;
+      dynamicUniforms
+        .filter((u) => !u.id.startsWith("base-"))
+        .forEach((u) => {
+          const pattern = new RegExp(
+            `\\s*uniform\\s+float\\s+${u.name}\\s*;`,
+            "g",
+          );
+          result = result.replace(pattern, "");
+        });
+      console.log("[stripInjectedUniforms] Output length:", result.length);
+      return result;
+    } catch (error) {
+      console.error("[stripInjectedUniforms] Error:", error);
+      return code;
+    }
+  };
+
+  const injectUniforms = (code: string): string => {
+    try {
+      // Find where uniforms are declared (after precision statement)
+      const precisionMatch = code.match(/precision\s+\w+\s+float;/);
+      if (!precisionMatch) {
+        console.warn("[injectUniforms] No precision statement found");
+        return code;
+      }
+
+      const insertPos = precisionMatch.index! + precisionMatch[0].length;
+      const uniformDecls = dynamicUniforms
+        .filter((u) => !u.id.startsWith("base-")) // Skip base uniforms already in FRAGMENT_SHADER
+        .map((u) => `\n  uniform float ${u.name};`)
+        .join("");
+
+      console.log(
+        "[injectUniforms] Injecting",
+        uniformDecls.length,
+        "chars of uniforms",
+      );
+      return code.slice(0, insertPos) + uniformDecls + code.slice(insertPos);
+    } catch (error) {
+      console.error("[injectUniforms] Error:", error);
+      return code;
     }
   };
 
@@ -145,41 +369,127 @@ const App: React.FC = () => {
     handleRecompileShader(FRAGMENT_SHADER);
   };
 
-  // Keep paramsRef in sync with params
+  // Keep refs in sync
   useEffect(() => {
     paramsRef.current = params;
   }, [params]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    dynamicUniformsRef.current = dynamicUniforms;
+  }, [dynamicUniforms]);
 
-    if (
-      initWebGL(
-        canvas,
-        shaderStateRef,
-        customFragmentShaderRef.current,
-        handleShaderError,
-      )
-    ) {
-      renderLoop();
+  useEffect(() => {
+    try {
+      console.log("[useEffect:init] Initializing WebGL");
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        console.error("[useEffect:init] Canvas ref is null");
+        return;
+      }
+
+      const initialCombined = buildFragmentSource(
+        customFragmentShaderRef.current || FRAGMENT_SHADER,
+        dynamicUniforms,
+      );
+
+      console.log(
+        "[useEffect:init] Initial shader length:",
+        initialCombined.length,
+      );
+
+      if (
+        initWebGL(canvas, shaderStateRef, initialCombined, handleShaderError)
+      ) {
+        console.log("[useEffect:init] WebGL initialized, starting render loop");
+        renderLoop();
+      } else {
+        console.error("[useEffect:init] WebGL initialization failed");
+        setCriticalError("Failed to initialize WebGL");
+      }
+
+      const handleMessage = (event: MessageEvent) => {
+        try {
+          if (event.data.pluginMessage?.type === "render-shader") {
+            console.log("[handleMessage] Capturing shader");
+            captureShader();
+          }
+        } catch (error) {
+          console.error("[handleMessage] Error:", error);
+          setCriticalError(
+            `Message handling failed: ${(error as Error).message}`,
+          );
+        }
+      };
+
+      window.addEventListener("message", handleMessage);
+
+      return () => {
+        console.log("[useEffect:init] Cleanup");
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        window.removeEventListener("message", handleMessage);
+      };
+    } catch (error) {
+      console.error("[useEffect:init] Exception:", error);
+      setCriticalError(`Initialization failed: ${(error as Error).message}`);
     }
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.pluginMessage?.type === "render-shader") {
-        captureShader();
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      window.removeEventListener("message", handleMessage);
-    };
   }, []);
+
+  // Recompile shader whenever the dynamic uniforms set changes
+  useEffect(() => {
+    try {
+      console.log("[useEffect:recompile] ====== START ======");
+      console.log("[useEffect:recompile] Triggered by uniforms change");
+      console.log(
+        "[useEffect:recompile] Current uniforms:",
+        dynamicUniforms.map((u) => `${u.name}=${u.value}`).join(", "),
+      );
+
+      if (!shaderStateRef.current.gl) {
+        console.log("[useEffect:recompile] No GL context yet, skipping");
+        return;
+      }
+
+      // Use the base shader (not the editor's modified code) to avoid double-injection
+      const baseShader = customFragmentShaderRef.current || FRAGMENT_SHADER;
+      console.log(
+        "[useEffect:recompile] Base shader source length:",
+        baseShader.length,
+      );
+      console.log(
+        "[useEffect:recompile] Base shader first 200 chars:",
+        baseShader.substring(0, 200),
+      );
+
+      // Inject uniforms into the base shader for the editor display
+      console.log(
+        "[useEffect:recompile] Calling injectUniforms for editor display...",
+      );
+      const injectedCode = injectUniforms(baseShader);
+      console.log(
+        "[useEffect:recompile] Injected code length:",
+        injectedCode.length,
+      );
+
+      // Recompile with the injected code
+      console.log("[useEffect:recompile] Calling handleRecompileShader...");
+      if (handleRecompileShader(baseShader)) {
+        // Update editor to show the injected uniforms
+        console.log(
+          "[useEffect:recompile] Recompile succeeded, updating editor",
+        );
+        setShaderCode(injectedCode);
+      } else {
+        console.error("[useEffect:recompile] Recompile failed");
+      }
+      console.log("[useEffect:recompile] ====== END ======");
+    } catch (error) {
+      console.error("[useEffect:recompile] EXCEPTION:", error);
+      console.error("[useEffect:recompile] Stack:", (error as Error).stack);
+      setCriticalError(`Recompile failed: ${(error as Error).message}`);
+    }
+  }, [dynamicUniforms]);
 
   return (
     <div
@@ -190,13 +500,35 @@ const App: React.FC = () => {
         Shader Studio
       </h2>
 
+      {criticalError && (
+        <div
+          className="w-full bg-red-900/30 border border-red-500 rounded p-3
+            text-sm"
+        >
+          <div className="font-semibold text-red-400 mb-1">Critical Error:</div>
+          <div className="text-red-200">{criticalError}</div>
+          <button
+            onClick={() => {
+              setCriticalError(null);
+              window.location.reload();
+            }}
+            className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-500 rounded
+              text-xs"
+          >
+            Reload Plugin
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-4 items-start">
         <ControlPanel
-          params={params}
-          onParamChange={handleParamChange}
           onCreateClick={handleCreateClick}
           onCancelClick={handleCancelClick}
           onAdvancedEditorClick={() => setIsModalOpen(true)}
+          dynamicUniforms={dynamicUniforms}
+          onAddUniform={() => setIsConfigModalOpen(true)}
+          onUpdateUniform={updateUniform}
+          onRemoveUniform={removeUniform}
         />
 
         <ShaderCanvas
@@ -218,6 +550,13 @@ const App: React.FC = () => {
         onShaderChange={setShaderCode}
         onApply={handleApplyShader}
         onReset={handleResetShader}
+        onClearError={() => setShaderError("")}
+      />
+
+      <UniformConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        onAdd={addUniform}
       />
     </div>
   );

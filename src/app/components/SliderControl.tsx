@@ -10,6 +10,7 @@ interface SliderControlProps {
   step: number;
   format: (v: number) => string;
   onChange: (value: number) => void;
+  onDelete?: () => void;
 }
 
 const SliderControl: React.FC<SliderControlProps> = ({
@@ -20,6 +21,7 @@ const SliderControl: React.FC<SliderControlProps> = ({
   step,
   format,
   onChange,
+  onDelete,
 }) => {
   return (
     <div className="flex flex-col gap-2">
@@ -43,7 +45,11 @@ const SliderControl: React.FC<SliderControlProps> = ({
           title={label}
           className="slider-input"
         />
-        <DeleteIcon />
+        {onDelete ? (
+          <span onClick={onDelete} role="button" aria-label={`Delete ${label}`}>
+            <DeleteIcon />
+          </span>
+        ) : null}
       </div>
     </div>
   );

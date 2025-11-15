@@ -12,16 +12,109 @@ export interface ShaderState {
     amplitude?: WebGLUniformLocation | null;
     yOffset?: WebGLUniformLocation | null;
   };
+  // Cache of dynamic uniform locations, keyed by uniform name
+  dynamicUniforms?: Record<string, WebGLUniformLocation | null>;
 }
 
 export interface ShaderParams {
-  speed: number;
-  lineCount: number;
-  amplitude: number;
-  yOffset: number;
   paused: boolean;
   pausedTime: number;
 }
+
+export interface DynamicUniform {
+  id: string;
+  name: string; // GLSL uniform identifier, e.g. "uParam1"
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+}
+
+// Prepend uniform float declarations for each dynamic uniform to the fragment shader source
+export const buildFragmentSource = (
+  baseSource: string,
+  dynamicUniforms: DynamicUniform[] | undefined,
+): string => {
+  try {
+    console.log("[buildFragmentSource] START");
+    console.log("[buildFragmentSource] Base source length:", baseSource.length);
+    console.log(
+      "[buildFragmentSource] Base source first 200 chars:",
+      baseSource.substring(0, 200),
+    );
+
+    if (!dynamicUniforms || dynamicUniforms.length === 0) {
+      console.log("[buildFragmentSource] No dynamic uniforms");
+      return baseSource;
+    }
+    console.log(
+      "[buildFragmentSource] Building with",
+      dynamicUniforms.length,
+      "uniforms:",
+      dynamicUniforms.map((u) => u.name).join(", "),
+    );
+
+    // Find precision statement - uniforms must come AFTER it
+    const precisionMatch = baseSource.match(/precision\s+\w+\s+float;/);
+    if (!precisionMatch) {
+      console.error(
+        "[buildFragmentSource] No precision statement found in base shader",
+      );
+      console.error(
+        "[buildFragmentSource] Base source:",
+        baseSource.substring(0, 500),
+      );
+      return baseSource;
+    }
+    console.log(
+      "[buildFragmentSource] Found precision at index:",
+      precisionMatch.index,
+    );
+
+    // Only add uniforms that are NOT already declared in the base source
+    // to prevent redefinition errors
+    const filteredUniforms = dynamicUniforms.filter((u) => {
+      const uniformPattern = new RegExp(`uniform\\s+float\\s+${u.name}\\s*;`);
+      const alreadyExists = uniformPattern.test(baseSource);
+      console.log(
+        `[buildFragmentSource] Uniform ${u.name} already exists:`,
+        alreadyExists,
+      );
+      return !alreadyExists;
+    });
+
+    if (filteredUniforms.length === 0) {
+      console.log(
+        "[buildFragmentSource] No new uniforms to add (all already declared)",
+      );
+      return baseSource;
+    }
+
+    console.log(
+      "[buildFragmentSource] Adding",
+      filteredUniforms.length,
+      "new uniforms:",
+      filteredUniforms.map((u) => u.name).join(", "),
+    );
+    const insertPos = precisionMatch.index! + precisionMatch[0].length;
+    const decls = filteredUniforms
+      .map((u) => `\n  uniform float ${u.name};`)
+      .join("");
+
+    console.log("[buildFragmentSource] Declarations to inject:", decls);
+    const result =
+      baseSource.slice(0, insertPos) + decls + baseSource.slice(insertPos);
+    console.log(
+      "[buildFragmentSource] Result first 500 chars:",
+      result.substring(0, 500),
+    );
+    return result;
+  } catch (error) {
+    console.error("[buildFragmentSource] Error:", error);
+    console.error("[buildFragmentSource] Stack:", (error as Error).stack);
+    return baseSource;
+  }
+};
 
 export const createShader = (
   gl: WebGLRenderingContext,
@@ -29,18 +122,36 @@ export const createShader = (
   source: string,
   onError: (error: string | null) => void,
 ): WebGLShader | null => {
+  const shaderType = type === gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
+  console.log(`[createShader] Creating ${shaderType} shader`);
+  console.log(`[createShader] Source length:`, source.length);
+  console.log(
+    `[createShader] Source first 300 chars:`,
+    source.substring(0, 300),
+  );
+
   const shader = gl.createShader(type);
-  if (!shader) return null;
+  if (!shader) {
+    console.error(
+      `[createShader] Failed to create ${shaderType} shader object`,
+    );
+    return null;
+  }
 
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     const errorLog = gl.getShaderInfoLog(shader);
+    console.error(`[createShader] ${shaderType} shader compilation failed:`);
+    console.error(`[createShader] Error log:`, errorLog);
+    console.error(`[createShader] Full source:`);
+    console.error(source);
     gl.deleteShader(shader);
-    onError(errorLog);
+    onError(`${shaderType} Shader: ${errorLog}`);
     return null;
   }
+  console.log(`[createShader] ${shaderType} shader compiled successfully`);
   return shader;
 };
 
@@ -110,7 +221,7 @@ export const initWebGL = (
 export const renderShader = (
   canvas: HTMLCanvasElement,
   shaderState: ShaderState,
-  params: ShaderParams,
+  params: ShaderParams & { dynamicUniforms?: DynamicUniform[] },
   currentTime: number,
 ): void => {
   const { gl, program, uniforms } = shaderState;
@@ -129,17 +240,20 @@ export const renderShader = (
   if (uniforms.time) {
     gl.uniform1f(uniforms.time, currentTime);
   }
-  if (uniforms.speed) {
-    gl.uniform1f(uniforms.speed, params.speed);
-  }
-  if (uniforms.lineCount) {
-    gl.uniform1f(uniforms.lineCount, params.lineCount);
-  }
-  if (uniforms.amplitude) {
-    gl.uniform1f(uniforms.amplitude, params.amplitude);
-  }
-  if (uniforms.yOffset) {
-    gl.uniform1f(uniforms.yOffset, params.yOffset);
+
+  // Apply all dynamic uniforms (including base ones like uSpeed, uLineCount, etc.)
+  if (params.dynamicUniforms && params.dynamicUniforms.length > 0) {
+    if (!shaderState.dynamicUniforms) shaderState.dynamicUniforms = {};
+    for (const u of params.dynamicUniforms) {
+      if (!(u.name in shaderState.dynamicUniforms)) {
+        shaderState.dynamicUniforms[u.name] = gl.getUniformLocation(
+          program,
+          u.name,
+        );
+      }
+      const loc = shaderState.dynamicUniforms[u.name];
+      if (loc) gl.uniform1f(loc, u.value);
+    }
   }
 
   gl.clearColor(0, 0, 0, 1);
@@ -150,7 +264,7 @@ export const renderShader = (
 export const captureShaderAsImage = (
   canvas: HTMLCanvasElement,
   shaderState: ShaderState,
-  params: ShaderParams,
+  params: ShaderParams & { dynamicUniforms?: DynamicUniform[] },
   currentTime: number,
   onCapture: (imageData: Uint8Array) => void,
 ): void => {
@@ -221,6 +335,9 @@ export const recompileShader = (
       amplitude: gl.getUniformLocation(newProgram, "uAmplitude"),
       yOffset: gl.getUniformLocation(newProgram, "uYOffset"),
     };
+
+    // Reset dynamic uniform cache after recompile
+    shaderState.current.dynamicUniforms = {};
 
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);

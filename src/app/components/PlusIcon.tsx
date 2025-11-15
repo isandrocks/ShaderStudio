@@ -1,6 +1,9 @@
 import React from "react";
 
-const PlusIcon: React.FC = () => {
+const PlusIcon: React.FC<{ onClick?: () => void; title?: string }> = ({
+  onClick,
+  title,
+}) => {
   return (
     <svg
       className="fill-primary h-4 w-4 cursor-pointer hover:fill-white
@@ -8,6 +11,9 @@ const PlusIcon: React.FC = () => {
       viewBox="0 0 12.7 12.7"
       version="1.1"
       id="plusIcon"
+      role="button"
+      aria-label={title || "Add"}
+      onClick={onClick}
     >
       <defs id="defs1" />
       <g id="layer1">

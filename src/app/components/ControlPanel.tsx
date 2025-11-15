@@ -1,76 +1,54 @@
 import React from "react";
 import SliderControl from "./SliderControl";
 import PlusIcon from "./PlusIcon";
+import type { DynamicUniform } from "../webgl";
 
 interface ControlPanelProps {
-  params: {
-    speed: number;
-    lineCount: number;
-    amplitude: number;
-    yOffset: number;
-  };
-  onParamChange: (key: string, value: number) => void;
   onCreateClick: () => void;
   onCancelClick: () => void;
   onAdvancedEditorClick: () => void;
+  dynamicUniforms: DynamicUniform[];
+  onAddUniform: () => void;
+  onUpdateUniform: (id: string, value: number) => void;
+  onRemoveUniform: (id: string) => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
-  params,
-  onParamChange,
   onCreateClick,
   onCancelClick,
   onAdvancedEditorClick,
+  dynamicUniforms,
+  onAddUniform,
+  onUpdateUniform,
+  onRemoveUniform,
 }) => {
   return (
     <div
       className="w-60 bg-[#2c2c2c] rounded-lg p-4 flex flex-col gap-4 border
         border-[#3c3c3c]"
     >
-      <PlusIcon />
-      <SliderControl
-        id="speed"
-        label="Speed:"
-        value={params.speed}
-        min={0}
-        max={3}
-        step={0.1}
-        format={(v) => v.toFixed(1)}
-        onChange={(value) => onParamChange("speed", value)}
-      />
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-300">Parameters</span>
+        <PlusIcon onClick={onAddUniform} title="Add parameter" />
+      </div>
 
-      <SliderControl
-        id="lineCount"
-        label="Line Count:"
-        value={params.lineCount}
-        min={1}
-        max={20}
-        step={1}
-        format={(v) => Math.round(v).toString()}
-        onChange={(value) => onParamChange("lineCount", value)}
-      />
-
-      <SliderControl
-        id="amplitude"
-        label="Amplitude:"
-        value={params.amplitude}
-        min={0}
-        max={0.5}
-        step={0.01}
-        format={(v) => v.toFixed(2)}
-        onChange={(value) => onParamChange("amplitude", value)}
-      />
-
-      <SliderControl
-        id="yOffset"
-        label="Y Offset:"
-        value={params.yOffset}
-        min={-0.5}
-        max={0.5}
-        step={0.01}
-        format={(v) => v.toFixed(2)}
-        onChange={(value) => onParamChange("yOffset", value)}
-      />
+      {dynamicUniforms.map((u) => {
+        const decimals = u.step >= 1 ? 0 : u.step >= 0.1 ? 1 : 2;
+        return (
+          <SliderControl
+            key={u.id}
+            id={u.id}
+            label={`${u.name}:`}
+            value={u.value}
+            min={u.min}
+            max={u.max}
+            step={u.step}
+            format={(v) => v.toFixed(decimals)}
+            onChange={(value) => onUpdateUniform(u.id, value)}
+            onDelete={() => onRemoveUniform(u.id)}
+          />
+        );
+      })}
 
       <div className="flex gap-2 w-full">
         <button
