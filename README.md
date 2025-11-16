@@ -247,7 +247,11 @@ npm run fmt
 
 ## License
 
-[Your License Here]
+MIT License - see [LICENSE](./LICENSE) file for details.
+
+Copyright (c) 2025 iSandRocks
+
+Free to use, modify, and distribute. Commercial use allowed.
 
 ---
 
