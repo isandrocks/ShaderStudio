@@ -7,6 +7,7 @@ interface ControlPanelProps {
   onCreateClick: () => void;
   onCancelClick: () => void;
   onAdvancedEditorClick: () => void;
+  onPresetsClick: () => void;
   dynamicUniforms: DynamicUniform[];
   onAddUniform: () => void;
   onUpdateUniform: (id: string, value: number) => void;
@@ -17,6 +18,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onCreateClick,
   onCancelClick,
   onAdvancedEditorClick,
+  onPresetsClick,
   dynamicUniforms,
   onAddUniform,
   onUpdateUniform,
@@ -78,6 +80,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           duration-150 hover:bg-[#454545] hover:border-primary"
       >
         Advanced Editor
+      </button>
+
+      <button
+        onClick={onPresetsClick}
+        className="w-full bg-[#3c3c3c] border border-[#4c4c4c] p-1 text-xs
+          font-medium text-gray-200 cursor-pointer rounded-md transition-all
+          duration-150 hover:bg-[#454545] hover:border-primary"
+      >
+        🎨 Load Preset
       </button>
     </div>
   );

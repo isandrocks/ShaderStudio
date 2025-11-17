@@ -3,7 +3,9 @@ import ControlPanel from "./components/ControlPanel";
 import ShaderCanvas from "./components/ShaderCanvas";
 import ShaderModal from "./components/ShaderModal";
 import UniformConfigModal from "./components/UniformConfigModal";
+import { PresetGallery } from "./components/PresetGallery";
 import { FRAGMENT_SHADER } from "./shaders";
+import { ShaderPreset } from "./presets";
 import {
   ShaderState,
   DynamicUniform,
@@ -22,6 +24,7 @@ const App: React.FC = () => {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isPresetGalleryOpen, setIsPresetGalleryOpen] = useState(false);
   const [shaderCode, setShaderCode] = useState(FRAGMENT_SHADER);
   const [shaderError, setShaderError] = useState("");
   const [criticalError, setCriticalError] = useState<string | null>(null);
@@ -244,6 +247,28 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("[removeUniform] Error:", error);
       setCriticalError(`Failed to remove uniform: ${(error as Error).message}`);
+    }
+  };
+
+  // Load a preset shader
+  const loadPreset = (preset: ShaderPreset) => {
+    try {
+      console.log("[loadPreset] Loading preset:", preset.name);
+      
+      // Set the shader code to the preset's fragment shader
+      customFragmentShaderRef.current = preset.fragmentShader;
+      setShaderCode(preset.fragmentShader);
+      
+      // Replace current uniforms with preset's default uniforms
+      setDynamicUniforms(preset.defaultUniforms);
+      
+      // Clear any errors
+      setShaderError("");
+      
+      console.log("[loadPreset] Preset loaded successfully");
+    } catch (error) {
+      console.error("[loadPreset] Error:", error);
+      setCriticalError(`Failed to load preset: ${(error as Error).message}`);
     }
   };
 
@@ -525,6 +550,7 @@ const App: React.FC = () => {
           onCreateClick={handleCreateClick}
           onCancelClick={handleCancelClick}
           onAdvancedEditorClick={() => setIsModalOpen(true)}
+          onPresetsClick={() => setIsPresetGalleryOpen(true)}
           dynamicUniforms={dynamicUniforms}
           onAddUniform={() => setIsConfigModalOpen(true)}
           onUpdateUniform={updateUniform}
@@ -557,6 +583,12 @@ const App: React.FC = () => {
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
         onAdd={addUniform}
+      />
+
+      <PresetGallery
+        isOpen={isPresetGalleryOpen}
+        onClose={() => setIsPresetGalleryOpen(false)}
+        onSelectPreset={loadPreset}
       />
     </div>
   );
