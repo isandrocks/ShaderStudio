@@ -73,7 +73,7 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
         <h3 className="text-base font-semibold text-white">Add Parameter</h3>
 
         <div className="flex flex-col gap-2">
-          <div className="flex flex-col ">
+          <div className="flex flex-col">
             <label className="text-xs text-gray-300">Uniform Name:</label>
             <input
               type="text"

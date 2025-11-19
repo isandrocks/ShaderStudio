@@ -47,7 +47,7 @@ const SliderControl: React.FC<SliderControlProps> = ({
         />
         {onDelete ? (
           <span onClick={onDelete} role="button" aria-label={`Delete ${label}`}>
-            <DeleteIcon />
+            <DeleteIcon className="h-3 w-3 cursor-pointer -top-1 -right-4" />
           </span>
         ) : null}
       </div>

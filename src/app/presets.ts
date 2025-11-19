@@ -17,7 +17,8 @@ export const SHADER_PRESETS: ShaderPreset[] = [
   {
     id: "multi-wave",
     name: "Multi Wave",
-    description: "Multiple sine waves with phase offset creating a flowing effect",
+    description:
+      "Multiple sine waves with phase offset creating a flowing effect",
     category: "waves",
     thumbnail: PRESET_THUMBNAILS["multi-wave"],
     fragmentShader: `precision mediump float;
@@ -66,10 +67,38 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "base-speed", name: "uSpeed", value: 1.0, min: 0, max: 3, step: 0.1 },
-      { id: "base-lineCount", name: "uLineCount", value: 10.0, min: 1, max: 20, step: 1 },
-      { id: "base-amplitude", name: "uAmplitude", value: 0.2, min: 0, max: 0.5, step: 0.01 },
-      { id: "base-yOffset", name: "uYOffset", value: 0.0, min: -0.5, max: 0.5, step: 0.01 },
+      {
+        id: "base-speed",
+        name: "uSpeed",
+        value: 1.0,
+        min: 0,
+        max: 3,
+        step: 0.1,
+      },
+      {
+        id: "base-lineCount",
+        name: "uLineCount",
+        value: 10.0,
+        min: 1,
+        max: 20,
+        step: 1,
+      },
+      {
+        id: "base-amplitude",
+        name: "uAmplitude",
+        value: 0.2,
+        min: 0,
+        max: 0.5,
+        step: 0.01,
+      },
+      {
+        id: "base-yOffset",
+        name: "uYOffset",
+        value: 0.0,
+        min: -0.5,
+        max: 0.5,
+        step: 0.01,
+      },
     ],
   },
   {
@@ -99,9 +128,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-speed", name: "uSpeed", value: 1.0, min: 0, max: 5, step: 0.1 },
-      { id: "preset-amplitude", name: "uAmplitude", value: 0.15, min: 0, max: 0.4, step: 0.01 },
-      { id: "preset-thickness", name: "uThickness", value: 0.03, min: 0.01, max: 0.1, step: 0.01 },
+      {
+        id: "preset-speed",
+        name: "uSpeed",
+        value: 1.0,
+        min: 0,
+        max: 5,
+        step: 0.1,
+      },
+      {
+        id: "preset-amplitude",
+        name: "uAmplitude",
+        value: 0.15,
+        min: 0,
+        max: 0.4,
+        step: 0.01,
+      },
+      {
+        id: "preset-thickness",
+        name: "uThickness",
+        value: 0.03,
+        min: 0.01,
+        max: 0.1,
+        step: 0.01,
+      },
     ],
   },
   {
@@ -132,9 +182,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-radius", name: "uRadius", value: 0.5, min: 0.1, max: 1.0, step: 0.01 },
-      { id: "preset-softness", name: "uSoftness", value: 0.3, min: 0.1, max: 1.0, step: 0.01 },
-      { id: "preset-pulse", name: "uPulse", value: 1.0, min: 0, max: 3, step: 0.1 },
+      {
+        id: "preset-radius",
+        name: "uRadius",
+        value: 0.5,
+        min: 0.1,
+        max: 1.0,
+        step: 0.01,
+      },
+      {
+        id: "preset-softness",
+        name: "uSoftness",
+        value: 0.3,
+        min: 0.1,
+        max: 1.0,
+        step: 0.01,
+      },
+      {
+        id: "preset-pulse",
+        name: "uPulse",
+        value: 1.0,
+        min: 0,
+        max: 3,
+        step: 0.1,
+      },
     ],
   },
   {
@@ -168,9 +239,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-gridSize", name: "uGridSize", value: 10.0, min: 2, max: 50, step: 1 },
-      { id: "preset-lineWidth", name: "uLineWidth", value: 0.05, min: 0.01, max: 0.2, step: 0.01 },
-      { id: "preset-glow", name: "uGlow", value: 0.5, min: 0, max: 2, step: 0.1 },
+      {
+        id: "preset-gridSize",
+        name: "uGridSize",
+        value: 10.0,
+        min: 2,
+        max: 50,
+        step: 1,
+      },
+      {
+        id: "preset-lineWidth",
+        name: "uLineWidth",
+        value: 0.05,
+        min: 0.01,
+        max: 0.2,
+        step: 0.01,
+      },
+      {
+        id: "preset-glow",
+        name: "uGlow",
+        value: 0.5,
+        min: 0,
+        max: 2,
+        step: 0.1,
+      },
     ],
   },
   {
@@ -208,9 +300,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-speed", name: "uSpeed", value: 0.5, min: 0, max: 2, step: 0.1 },
-      { id: "preset-scale", name: "uScale", value: 5.0, min: 1, max: 20, step: 0.5 },
-      { id: "preset-intensity", name: "uIntensity", value: 2.0, min: 0.5, max: 5, step: 0.1 },
+      {
+        id: "preset-speed",
+        name: "uSpeed",
+        value: 0.5,
+        min: 0,
+        max: 2,
+        step: 0.1,
+      },
+      {
+        id: "preset-scale",
+        name: "uScale",
+        value: 5.0,
+        min: 1,
+        max: 20,
+        step: 0.5,
+      },
+      {
+        id: "preset-intensity",
+        name: "uIntensity",
+        value: 2.0,
+        min: 0.5,
+        max: 5,
+        step: 0.1,
+      },
     ],
   },
   {
@@ -248,9 +361,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-size", name: "uSize", value: 8.0, min: 2, max: 32, step: 1 },
-      { id: "preset-rotation", name: "uRotation", value: 0.1, min: 0, max: 1, step: 0.05 },
-      { id: "preset-blend", name: "uBlend", value: 0.0, min: 0, max: 0.5, step: 0.05 },
+      {
+        id: "preset-size",
+        name: "uSize",
+        value: 8.0,
+        min: 2,
+        max: 32,
+        step: 1,
+      },
+      {
+        id: "preset-rotation",
+        name: "uRotation",
+        value: 0.1,
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
+      {
+        id: "preset-blend",
+        name: "uBlend",
+        value: 0.0,
+        min: 0,
+        max: 0.5,
+        step: 0.05,
+      },
     ],
   },
   {
@@ -279,9 +413,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-speed", name: "uSpeed", value: 3.0, min: 0, max: 10, step: 0.5 },
-      { id: "preset-frequency", name: "uFrequency", value: 20.0, min: 5, max: 50, step: 1 },
-      { id: "preset-amplitude", name: "uAmplitude", value: 0.5, min: 0.1, max: 1, step: 0.05 },
+      {
+        id: "preset-speed",
+        name: "uSpeed",
+        value: 3.0,
+        min: 0,
+        max: 10,
+        step: 0.5,
+      },
+      {
+        id: "preset-frequency",
+        name: "uFrequency",
+        value: 20.0,
+        min: 5,
+        max: 50,
+        step: 1,
+      },
+      {
+        id: "preset-amplitude",
+        name: "uAmplitude",
+        value: 0.5,
+        min: 0.1,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   {
@@ -314,9 +469,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-scale", name: "uScale", value: 50.0, min: 10, max: 200, step: 5 },
-      { id: "preset-speed", name: "uSpeed", value: 0.5, min: 0, max: 2, step: 0.1 },
-      { id: "preset-contrast", name: "uContrast", value: 1.5, min: 0.5, max: 3, step: 0.1 },
+      {
+        id: "preset-scale",
+        name: "uScale",
+        value: 50.0,
+        min: 10,
+        max: 200,
+        step: 5,
+      },
+      {
+        id: "preset-speed",
+        name: "uSpeed",
+        value: 0.5,
+        min: 0,
+        max: 2,
+        step: 0.1,
+      },
+      {
+        id: "preset-contrast",
+        name: "uContrast",
+        value: 1.5,
+        min: 0.5,
+        max: 3,
+        step: 0.1,
+      },
     ],
   },
   {
@@ -348,9 +524,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-bars", name: "uBars", value: 10.0, min: 2, max: 50, step: 1 },
-      { id: "preset-speed", name: "uSpeed", value: 0.5, min: 0, max: 2, step: 0.1 },
-      { id: "preset-shift", name: "uShift", value: 0.1, min: 0, max: 1, step: 0.05 },
+      {
+        id: "preset-bars",
+        name: "uBars",
+        value: 10.0,
+        min: 2,
+        max: 50,
+        step: 1,
+      },
+      {
+        id: "preset-speed",
+        name: "uSpeed",
+        value: 0.5,
+        min: 0,
+        max: 2,
+        step: 0.1,
+      },
+      {
+        id: "preset-shift",
+        name: "uShift",
+        value: 0.1,
+        min: 0,
+        max: 1,
+        step: 0.05,
+      },
     ],
   },
   {
@@ -382,9 +579,30 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }`,
     defaultUniforms: [
-      { id: "preset-size", name: "uSize", value: 0.3, min: 0.1, max: 0.5, step: 0.01 },
-      { id: "preset-pulseSpeed", name: "uPulseSpeed", value: 2.0, min: 0.5, max: 5, step: 0.1 },
-      { id: "preset-glow", name: "uGlow", value: 5.0, min: 1, max: 15, step: 0.5 },
+      {
+        id: "preset-size",
+        name: "uSize",
+        value: 0.3,
+        min: 0.1,
+        max: 0.5,
+        step: 0.01,
+      },
+      {
+        id: "preset-pulseSpeed",
+        name: "uPulseSpeed",
+        value: 2.0,
+        min: 0.5,
+        max: 5,
+        step: 0.1,
+      },
+      {
+        id: "preset-glow",
+        name: "uGlow",
+        value: 5.0,
+        min: 1,
+        max: 15,
+        step: 0.5,
+      },
     ],
   },
 ];

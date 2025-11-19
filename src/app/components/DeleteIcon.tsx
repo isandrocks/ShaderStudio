@@ -1,10 +1,14 @@
 import React from "react";
 
-const DeleteIcon: React.FC = () => {
+interface DeleteIconProps {
+  className?: string;
+}
+
+const DeleteIcon: React.FC<DeleteIconProps> = ({ className = "" }) => {
   return (
     <svg
-      className="absolute fill-[#a03e3e] h-3 w-3 cursor-pointer -top-1 -right-4
-        pointer-events-auto hover:fill-[#c74e4e]"
+      className={`absolute fill-[#a03e3e] pointer-events-auto
+        hover:fill-[#c74e4e] ${className}`}
       viewBox="0 0 12.7 12.7"
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"

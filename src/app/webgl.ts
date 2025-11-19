@@ -1,4 +1,4 @@
-import { VERTEX_SHADER, FRAGMENT_SHADER } from "./shaders";
+import { VERTEX_SHADER } from "./shaders";
 
 export interface ShaderState {
   gl: WebGLRenderingContext | null;
@@ -36,79 +36,31 @@ export const buildFragmentSource = (
   dynamicUniforms: DynamicUniform[] | undefined,
 ): string => {
   try {
-    console.log("[buildFragmentSource] START");
-    console.log("[buildFragmentSource] Base source length:", baseSource.length);
-    console.log(
-      "[buildFragmentSource] Base source first 200 chars:",
-      baseSource.substring(0, 200),
-    );
-
     if (!dynamicUniforms || dynamicUniforms.length === 0) {
-      console.log("[buildFragmentSource] No dynamic uniforms");
       return baseSource;
     }
-    console.log(
-      "[buildFragmentSource] Building with",
-      dynamicUniforms.length,
-      "uniforms:",
-      dynamicUniforms.map((u) => u.name).join(", "),
-    );
 
-    // Find precision statement - uniforms must come AFTER it
     const precisionMatch = baseSource.match(/precision\s+\w+\s+float;/);
     if (!precisionMatch) {
-      console.error(
-        "[buildFragmentSource] No precision statement found in base shader",
-      );
-      console.error(
-        "[buildFragmentSource] Base source:",
-        baseSource.substring(0, 500),
-      );
+      console.error("[buildFragmentSource] No precision statement found");
       return baseSource;
     }
-    console.log(
-      "[buildFragmentSource] Found precision at index:",
-      precisionMatch.index,
-    );
 
-    // Only add uniforms that are NOT already declared in the base source
-    // to prevent redefinition errors
     const filteredUniforms = dynamicUniforms.filter((u) => {
       const uniformPattern = new RegExp(`uniform\\s+float\\s+${u.name}\\s*;`);
-      const alreadyExists = uniformPattern.test(baseSource);
-      console.log(
-        `[buildFragmentSource] Uniform ${u.name} already exists:`,
-        alreadyExists,
-      );
-      return !alreadyExists;
+      return !uniformPattern.test(baseSource);
     });
 
     if (filteredUniforms.length === 0) {
-      console.log(
-        "[buildFragmentSource] No new uniforms to add (all already declared)",
-      );
       return baseSource;
     }
 
-    console.log(
-      "[buildFragmentSource] Adding",
-      filteredUniforms.length,
-      "new uniforms:",
-      filteredUniforms.map((u) => u.name).join(", "),
-    );
     const insertPos = precisionMatch.index! + precisionMatch[0].length;
     const decls = filteredUniforms
       .map((u) => `\n  uniform float ${u.name};`)
       .join("");
 
-    console.log("[buildFragmentSource] Declarations to inject:", decls);
-    const result =
-      baseSource.slice(0, insertPos) + decls + baseSource.slice(insertPos);
-    console.log(
-      "[buildFragmentSource] Result first 500 chars:",
-      result.substring(0, 500),
-    );
-    return result;
+    return baseSource.slice(0, insertPos) + decls + baseSource.slice(insertPos);
   } catch (error) {
     console.error("[buildFragmentSource] Error:", error);
     console.error("[buildFragmentSource] Stack:", (error as Error).stack);
@@ -123,18 +75,10 @@ export const createShader = (
   onError: (error: string | null) => void,
 ): WebGLShader | null => {
   const shaderType = type === gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
-  console.log(`[createShader] Creating ${shaderType} shader`);
-  console.log(`[createShader] Source length:`, source.length);
-  console.log(
-    `[createShader] Source first 300 chars:`,
-    source.substring(0, 300),
-  );
 
   const shader = gl.createShader(type);
   if (!shader) {
-    console.error(
-      `[createShader] Failed to create ${shaderType} shader object`,
-    );
+    console.error(`[createShader] Failed to create ${shaderType} shader`);
     return null;
   }
 
@@ -143,22 +87,21 @@ export const createShader = (
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     const errorLog = gl.getShaderInfoLog(shader);
-    console.error(`[createShader] ${shaderType} shader compilation failed:`);
-    console.error(`[createShader] Error log:`, errorLog);
-    console.error(`[createShader] Full source:`);
-    console.error(source);
+    console.error(
+      `[createShader] ${shaderType} shader compilation failed:`,
+      errorLog,
+    );
     gl.deleteShader(shader);
     onError(`${shaderType} Shader: ${errorLog}`);
     return null;
   }
-  console.log(`[createShader] ${shaderType} shader compiled successfully`);
   return shader;
 };
 
 export const initWebGL = (
   canvas: HTMLCanvasElement,
   shaderState: React.MutableRefObject<ShaderState>,
-  customFragmentShader: string | null,
+  customFragmentShader: string,
   onError: (error: string | null) => void,
 ): boolean => {
   const gl = canvas.getContext("webgl");
@@ -172,11 +115,10 @@ export const initWebGL = (
     VERTEX_SHADER,
     onError,
   );
-  const fragmentShaderSource = customFragmentShader || FRAGMENT_SHADER;
   const fragmentShader = createShader(
     gl,
     gl.FRAGMENT_SHADER,
-    fragmentShaderSource,
+    customFragmentShader,
     onError,
   );
 

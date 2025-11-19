@@ -15,3 +15,5 @@ ui copy.html
 ui.html.old
 src/app/App.tsx.old
 fshad.glsl
+.github/prompts/plan-shaderSaveLoadSystem.prompt.md
+.vscode/launch.json
