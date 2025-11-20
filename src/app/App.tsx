@@ -7,26 +7,23 @@ import { PresetGallery } from "./components/PresetGallery";
 import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
 import { ShaderPreset, SHADER_PRESETS } from "./presets";
-import {
+import type {
   ShaderState,
   DynamicUniform,
+  UniformType,
+  UniformValue,
+  SavedShader,
+  ModalType,
+} from "./types";
+import {
   initWebGL,
   renderShader,
   captureShaderAsImage,
   recompileShader,
   buildFragmentSource,
+  stripInjectedUniforms,
+  injectUniforms,
 } from "./webgl";
-
-interface SavedShader {
-  id: string;
-  name: string;
-  description?: string;
-  fragmentShader: string;
-  dynamicUniforms: DynamicUniform[];
-  createdAt: number;
-  updatedAt: number;
-  thumbnail?: string;
-}
 
 const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,11 +31,7 @@ const App: React.FC = () => {
     paused: false,
     pausedTime: 0.0,
   });
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [isPresetGalleryOpen, setIsPresetGalleryOpen] = useState(false);
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [isSavedShadersOpen, setIsSavedShadersOpen] = useState(false);
+  const [openModal, setOpenModal] = useState<ModalType>("none");
   const [savedShaders, setSavedShaders] = useState<SavedShader[]>([]);
   const [shaderCode, setShaderCode] = useState(
     SHADER_PRESETS[0].fragmentShader,
@@ -53,6 +46,7 @@ const App: React.FC = () => {
     gl: null,
     program: null,
     uniforms: {},
+    dynamicUniforms: {},
   });
   const startTimeRef = useRef(Date.now());
   const animationFrameRef = useRef<number | undefined>(undefined);
@@ -150,31 +144,39 @@ const App: React.FC = () => {
 
   const addUniform = (config: {
     name: string;
+    type: UniformType;
+    value: UniformValue;
     min: number;
     max: number;
     step: number;
-    value: number;
   }) => {
     try {
       const existingNames = new Set(dynamicUniforms.map((u) => u.name));
-      if (existingNames.has(config.name)) {
-        setShaderError(`Uniform "${config.name}" already exists`);
-        return;
+      
+      // Auto-increment name if it already exists
+      let finalName = config.name;
+      if (existingNames.has(finalName)) {
+        let counter = 2;
+        while (existingNames.has(`${config.name}${counter}`)) {
+          counter++;
+        }
+        finalName = `${config.name}${counter}`;
       }
 
       const newU: DynamicUniform = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         ...config,
+        name: finalName,
       };
       setDynamicUniforms((prev) => [...prev, newU]);
-      setIsConfigModalOpen(false);
+      setOpenModal("none");
     } catch (error) {
       console.error("[addUniform] Error:", error);
       setCriticalError(`Failed to add uniform: ${(error as Error).message}`);
     }
   };
 
-  const updateUniform = (id: string, value: number) => {
+  const updateUniform = (id: string, value: UniformValue) => {
     try {
       setDynamicUniforms((prev) =>
         prev.map((u) => (u.id === id ? { ...u, value } : u)),
@@ -199,7 +201,13 @@ const App: React.FC = () => {
     try {
       customFragmentShaderRef.current = preset.fragmentShader;
       setShaderCode(preset.fragmentShader);
-      setDynamicUniforms(preset.defaultUniforms);
+
+      // Ensure backward compatibility - default type to 'float' if missing
+      const uniformsWithTypes = preset.defaultUniforms.map((u) => ({
+        ...u,
+        type: u.type || ("float" as UniformType),
+      }));
+      setDynamicUniforms(uniformsWithTypes);
       setShaderError("");
     } catch (error) {
       console.error("[loadPreset] Error:", error);
@@ -212,14 +220,20 @@ const App: React.FC = () => {
     try {
       customFragmentShaderRef.current = shader.fragmentShader;
       setShaderCode(shader.fragmentShader);
-      setDynamicUniforms([...shader.dynamicUniforms]);
+
+      // Ensure backward compatibility - default type to 'float' if missing
+      const uniformsWithTypes = shader.dynamicUniforms.map((u) => ({
+        ...u,
+        type: u.type || ("float" as UniformType),
+      }));
+      setDynamicUniforms(uniformsWithTypes);
       setShaderError("");
 
       // Recompile shader
       if (shaderStateRef.current.gl) {
         const source = buildFragmentSource(
           shader.fragmentShader,
-          shader.dynamicUniforms,
+          uniformsWithTypes,
         );
         const success = recompileShader(
           shaderStateRef.current.gl,
@@ -274,71 +288,17 @@ const App: React.FC = () => {
     try {
       setShaderError("");
 
-      const cleanedCode = stripInjectedUniforms(shaderCode);
+      const cleanedCode = stripInjectedUniforms(shaderCode, dynamicUniforms);
 
       if (handleRecompileShader(cleanedCode)) {
         customFragmentShaderRef.current = cleanedCode;
-        const injectedCode = injectUniforms(cleanedCode);
+        const injectedCode = injectUniforms(cleanedCode, dynamicUniforms);
         setShaderCode(injectedCode);
       }
     } catch (error) {
       console.error("[handleApplyShader] EXCEPTION:", error);
       console.error("[handleApplyShader] Stack:", (error as Error).stack);
       setShaderError(`Apply failed: ${(error as Error).message}`);
-    }
-  };
-
-  // Remove auto-injected uniform declarations (but keep user-added ones)
-  const stripInjectedUniforms = (code: string): string => {
-    try {
-      let result = code;
-      dynamicUniforms
-        .filter((u) => !u.id.startsWith("base-"))
-        .forEach((u) => {
-          const pattern = new RegExp(
-            `\\s*uniform\\s+float\\s+${u.name}\\s*;`,
-            "g",
-          );
-          result = result.replace(pattern, "");
-        });
-      return result;
-    } catch (error) {
-      console.error("[stripInjectedUniforms] Error:", error);
-      return code;
-    }
-  };
-
-  const injectUniforms = (code: string): string => {
-    try {
-      const precisionMatch = code.match(/precision\s+\w+\s+float;/);
-      if (!precisionMatch) {
-        console.warn("[injectUniforms] No precision statement found");
-        return code;
-      }
-
-      // Only inject uniforms that don't already exist in the code
-      const filteredUniforms = dynamicUniforms
-        .filter((u) => !u.id.startsWith("base-"))
-        .filter((u) => {
-          const uniformPattern = new RegExp(
-            `uniform\\s+float\\s+${u.name}\\s*;`,
-          );
-          return !uniformPattern.test(code);
-        });
-
-      if (filteredUniforms.length === 0) {
-        return code;
-      }
-
-      const insertPos = precisionMatch.index! + precisionMatch[0].length;
-      const uniformDecls = filteredUniforms
-        .map((u) => `\n  uniform float ${u.name};`)
-        .join("");
-
-      return code.slice(0, insertPos) + uniformDecls + code.slice(insertPos);
-    } catch (error) {
-      console.error("[injectUniforms] Error:", error);
-      return code;
     }
   };
 
@@ -445,7 +405,7 @@ const App: React.FC = () => {
 
       const baseShader =
         customFragmentShaderRef.current || SHADER_PRESETS[0].fragmentShader;
-      const injectedCode = injectUniforms(baseShader);
+      const injectedCode = injectUniforms(baseShader, dynamicUniforms);
 
       if (handleRecompileShader(baseShader)) {
         setShaderCode(injectedCode);
@@ -490,12 +450,12 @@ const App: React.FC = () => {
         <ControlPanel
           onCreateClick={handleCreateClick}
           onCancelClick={handleCancelClick}
-          onAdvancedEditorClick={() => setIsModalOpen(true)}
-          onPresetsClick={() => setIsPresetGalleryOpen(true)}
-          onSaveShader={() => setIsSaveModalOpen(true)}
-          onOpenSavedShaders={() => setIsSavedShadersOpen(true)}
+          onAdvancedEditorClick={() => setOpenModal("shader")}
+          onPresetsClick={() => setOpenModal("presets")}
+          onSaveShader={() => setOpenModal("save")}
+          onOpenSavedShaders={() => setOpenModal("saved-shaders")}
           dynamicUniforms={dynamicUniforms}
-          onAddUniform={() => setIsConfigModalOpen(true)}
+          onAddUniform={() => setOpenModal("config")}
           onUpdateUniform={updateUniform}
           onRemoveUniform={removeUniform}
         />
@@ -512,10 +472,10 @@ const App: React.FC = () => {
       </p>
 
       <ShaderModal
-        isOpen={isModalOpen}
+        isOpen={openModal === "shader"}
         shaderCode={shaderCode}
         error={shaderError}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => setOpenModal("none")}
         onShaderChange={setShaderCode}
         onApply={handleApplyShader}
         onReset={handleResetShader}
@@ -523,20 +483,20 @@ const App: React.FC = () => {
       />
 
       <UniformConfigModal
-        isOpen={isConfigModalOpen}
-        onClose={() => setIsConfigModalOpen(false)}
+        isOpen={openModal === "config"}
+        onClose={() => setOpenModal("none")}
         onAdd={addUniform}
       />
 
       <PresetGallery
-        isOpen={isPresetGalleryOpen}
-        onClose={() => setIsPresetGalleryOpen(false)}
+        isOpen={openModal === "presets"}
+        onClose={() => setOpenModal("none")}
         onSelectPreset={loadPreset}
       />
 
       <SaveShaderModal
-        isOpen={isSaveModalOpen}
-        onClose={() => setIsSaveModalOpen(false)}
+        isOpen={openModal === "save"}
+        onClose={() => setOpenModal("none")}
         shaderCode={shaderCode}
         customFragmentShaderRef={customFragmentShaderRef}
         dynamicUniforms={dynamicUniforms}
@@ -547,9 +507,9 @@ const App: React.FC = () => {
       />
 
       <SavedShadersGallery
-        isOpen={isSavedShadersOpen}
+        isOpen={openModal === "saved-shaders"}
         savedShaders={savedShaders}
-        onClose={() => setIsSavedShadersOpen(false)}
+        onClose={() => setOpenModal("none")}
         onLoadShader={loadSavedShader}
         onDeleteShader={deleteSavedShader}
       />

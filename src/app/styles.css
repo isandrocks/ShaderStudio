@@ -57,3 +57,30 @@
     }
   }
 }
+
+@utility scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: #4c4c4c #2a2a2a;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #4c4c4c;
+    border-radius: 4px;
+    border: 2px solid #2a2a2a;
+
+    &:hover {
+      background-color: #5c5c5c;
+    }
+
+    &:active {
+      background-color: #6c6c6c;
+    }
+  }
+}

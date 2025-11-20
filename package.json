@@ -9,7 +9,8 @@
     "lint": "eslint --ext .ts,.tsx --ignore-pattern node_modules .",
     "lint:fix": "eslint --ext .ts,.tsx --ignore-pattern node_modules --fix .",
     "watch": "npm run build:watch",
-    "fmt": "prettier --write src/"
+    "fmt": "prettier --write src/",
+    "generate:thumbnails": "node scripts/generate-thumbnails.js"
   },
   "author": "",
   "license": "",
@@ -65,6 +66,7 @@
     "prettier-plugin-tailwindcss": "^0.7.1",
     "react": "^19.2.0",
     "react-ace": "^14.0.1",
+    "react-colorful": "^5.6.1",
     "react-dom": "^19.2.0"
   },
   "prettier": {

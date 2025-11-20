@@ -4,10 +4,18 @@ figma.showUI(__html__, { themeColors: true, width: 825, height: 650 });
 let currentRect: RectangleNode | null = null;
 
 // SavedShader interface for document storage
+type UniformType = "float" | "vec3" | "vec4";
+
+type UniformValue =
+  | number // float
+  | [number, number, number] // vec3 (RGB)
+  | [number, number, number, number]; // vec4 (RGBA)
+
 interface DynamicUniform {
   id: string;
   name: string;
-  value: number;
+  type: UniformType;
+  value: UniformValue;
   min: number;
   max: number;
   step: number;

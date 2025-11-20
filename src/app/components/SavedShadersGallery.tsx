@@ -1,17 +1,6 @@
 import React, { useState } from "react";
-import type { DynamicUniform } from "../webgl";
+import type { SavedShader } from "../types";
 import DeleteIcon from "./DeleteIcon";
-
-interface SavedShader {
-  id: string;
-  name: string;
-  description?: string;
-  fragmentShader: string;
-  dynamicUniforms: DynamicUniform[];
-  createdAt: number;
-  updatedAt: number;
-  thumbnail?: string;
-}
 
 interface SavedShadersGalleryProps {
   isOpen: boolean;
@@ -210,7 +199,8 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
                     title="Delete shader"
                   >
                     <DeleteIcon
-                      className="h-7 cursor-pointer p-1 rounded-lg transition-all hover:bg-red-900/40"
+                      className="h-7 cursor-pointer p-1 rounded-lg
+                        transition-all hover:bg-red-900/40"
                     />
                   </button>
                 </div>

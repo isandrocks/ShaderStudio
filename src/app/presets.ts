@@ -18,7 +18,7 @@ export const SHADER_PRESETS: ShaderPreset[] = [
     id: "multi-wave",
     name: "Multi Wave",
     description:
-      "Multiple sine waves with phase offset creating a flowing effect",
+      "Multiple sine waves with gradient colors and adjustable parameters",
     category: "waves",
     thumbnail: PRESET_THUMBNAILS["multi-wave"],
     fragmentShader: `precision mediump float;
@@ -28,48 +28,50 @@ uniform float uSpeed;
 uniform float uLineCount;
 uniform float uAmplitude;
 uniform float uYOffset;
+uniform vec3 uBgColor1;
+uniform vec3 uBgColor2;
+uniform vec3 uWaveColor1;
+uniform vec3 uWaveColor2;
+
+const float MAX_LINES = 20.0;
+
+float wave(vec2 uv, float speed, float yPos, float thickness, float softness) {
+  float falloff = smoothstep(1., 0.5, abs(uv.x));
+  float y = falloff * sin(iTime * speed + uv.x * 10.0) * yPos - uYOffset;
+  return 1.0 - smoothstep(thickness, thickness + softness + falloff * 0.0, abs(uv.y - y));
+}
 
 void main() {
-    vec2 uv = gl_FragCoord.xy / iResolution.xy;
-
-    float x = uv.x;
-    float y = uv.y;
-
-    // Dark gray/black background
-    vec3 bgColor = vec3(0.05, 0.05, 0.05);
-    vec3 color = bgColor;
-
-    // Create multiple sine waves, each one tick out of phase
-    float lineWidth = 0.02;
-    
-    for (float i = 0.0; i < 20.0; i += 1.0) {
-        if (i >= uLineCount) break;
-        
-        // Phase offset for each line (one tick out of phase)
-        float phaseOffset = i * 0.1;
-        
-        // Calculate sine wave y position for this line
-        float waveY = 0.5 + uYOffset + uAmplitude * sin(x * uSpeed * 6.28318 + iTime + phaseOffset);
-        
-        // Calculate distance from current pixel to wave
-        float dist = abs(y - waveY);
-        
-        // Create smooth line with anti-aliasing
-        float line = smoothstep(lineWidth, lineWidth * 0.5, dist);
-        
-        // White wave color
-        vec3 waveColor = vec3(1.0, 1.0, 1.0);
-        
-        // Accumulate lines
-        color = mix(color, waveColor, line);
+  vec2 uv = gl_FragCoord.xy / iResolution.y;
+  vec4 col = vec4(0.0, 0.0, 0.0, 1.0);
+  
+  // Background gradient using color uniforms
+  col.xyz = mix(uBgColor1, uBgColor2, uv.x + uv.y);
+  
+  uv -= 0.5;
+  
+  float aaDy = iResolution.y * 0.000005;
+  
+  for (float i = 0.; i < MAX_LINES; i += 1.) {
+    if (i <= uLineCount) {
+      float t = i / (uLineCount - 1.0);
+      vec3 lineCol = mix(uWaveColor1, uWaveColor2, t);
+      float bokeh = pow(t, 3.0);
+      float thickness = 0.003;
+      float softness = aaDy + bokeh * 0.2;
+      float amp = uAmplitude - 0.05 * t;
+      float amt = max(0.0, pow(1.0 - bokeh, 2.0) * 0.9);
+      col.xyz += wave(uv, uSpeed * (1.0 + t), uAmplitude, thickness, softness) * lineCol * amt;
     }
-
-    gl_FragColor = vec4(color, 1.0);
+  }
+  
+  gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
         id: "base-speed",
         name: "uSpeed",
+        type: "float",
         value: 1.0,
         min: 0,
         max: 3,
@@ -78,6 +80,7 @@ void main() {
       {
         id: "base-lineCount",
         name: "uLineCount",
+        type: "float",
         value: 10.0,
         min: 1,
         max: 20,
@@ -86,6 +89,7 @@ void main() {
       {
         id: "base-amplitude",
         name: "uAmplitude",
+        type: "float",
         value: 0.2,
         min: 0,
         max: 0.5,
@@ -94,9 +98,46 @@ void main() {
       {
         id: "base-yOffset",
         name: "uYOffset",
+        type: "float",
         value: 0.0,
         min: -0.5,
         max: 0.5,
+        step: 0.01,
+      },
+      {
+        id: "base-bgColor1",
+        name: "uBgColor1",
+        type: "vec3",
+        value: [0.2, 0.1, 0.0],
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        id: "base-bgColor2",
+        name: "uBgColor2",
+        type: "vec3",
+        value: [0.2, 0.0, 0.2],
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        id: "base-waveColor1",
+        name: "uWaveColor1",
+        type: "vec3",
+        value: [0.2, 0.5, 0.9],
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        id: "base-waveColor2",
+        name: "uWaveColor2",
+        type: "vec3",
+        value: [0.9, 0.3, 0.9],
+        min: 0,
+        max: 1,
         step: 0.01,
       },
     ],
@@ -130,6 +171,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-speed",
+        type: "float",
         name: "uSpeed",
         value: 1.0,
         min: 0,
@@ -138,6 +180,7 @@ void main() {
       },
       {
         id: "preset-amplitude",
+        type: "float",
         name: "uAmplitude",
         value: 0.15,
         min: 0,
@@ -146,6 +189,7 @@ void main() {
       },
       {
         id: "preset-thickness",
+        type: "float",
         name: "uThickness",
         value: 0.03,
         min: 0.01,
@@ -184,6 +228,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-radius",
+        type: "float",
         name: "uRadius",
         value: 0.5,
         min: 0.1,
@@ -192,6 +237,7 @@ void main() {
       },
       {
         id: "preset-softness",
+        type: "float",
         name: "uSoftness",
         value: 0.3,
         min: 0.1,
@@ -200,6 +246,7 @@ void main() {
       },
       {
         id: "preset-pulse",
+        type: "float",
         name: "uPulse",
         value: 1.0,
         min: 0,
@@ -241,6 +288,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-gridSize",
+        type: "float",
         name: "uGridSize",
         value: 10.0,
         min: 2,
@@ -249,6 +297,7 @@ void main() {
       },
       {
         id: "preset-lineWidth",
+        type: "float",
         name: "uLineWidth",
         value: 0.05,
         min: 0.01,
@@ -257,6 +306,7 @@ void main() {
       },
       {
         id: "preset-glow",
+        type: "float",
         name: "uGlow",
         value: 0.5,
         min: 0,
@@ -302,6 +352,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-speed",
+        type: "float",
         name: "uSpeed",
         value: 0.5,
         min: 0,
@@ -310,6 +361,7 @@ void main() {
       },
       {
         id: "preset-scale",
+        type: "float",
         name: "uScale",
         value: 5.0,
         min: 1,
@@ -318,6 +370,7 @@ void main() {
       },
       {
         id: "preset-intensity",
+        type: "float",
         name: "uIntensity",
         value: 2.0,
         min: 0.5,
@@ -363,6 +416,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-size",
+        type: "float",
         name: "uSize",
         value: 8.0,
         min: 2,
@@ -371,6 +425,7 @@ void main() {
       },
       {
         id: "preset-rotation",
+        type: "float",
         name: "uRotation",
         value: 0.1,
         min: 0,
@@ -379,6 +434,7 @@ void main() {
       },
       {
         id: "preset-blend",
+        type: "float",
         name: "uBlend",
         value: 0.0,
         min: 0,
@@ -415,6 +471,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-speed",
+        type: "float",
         name: "uSpeed",
         value: 3.0,
         min: 0,
@@ -423,6 +480,7 @@ void main() {
       },
       {
         id: "preset-frequency",
+        type: "float",
         name: "uFrequency",
         value: 20.0,
         min: 5,
@@ -431,6 +489,7 @@ void main() {
       },
       {
         id: "preset-amplitude",
+        type: "float",
         name: "uAmplitude",
         value: 0.5,
         min: 0.1,
@@ -471,6 +530,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-scale",
+        type: "float",
         name: "uScale",
         value: 50.0,
         min: 10,
@@ -479,6 +539,7 @@ void main() {
       },
       {
         id: "preset-speed",
+        type: "float",
         name: "uSpeed",
         value: 0.5,
         min: 0,
@@ -487,6 +548,7 @@ void main() {
       },
       {
         id: "preset-contrast",
+        type: "float",
         name: "uContrast",
         value: 1.5,
         min: 0.5,
@@ -526,6 +588,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-bars",
+        type: "float",
         name: "uBars",
         value: 10.0,
         min: 2,
@@ -534,6 +597,7 @@ void main() {
       },
       {
         id: "preset-speed",
+        type: "float",
         name: "uSpeed",
         value: 0.5,
         min: 0,
@@ -542,6 +606,7 @@ void main() {
       },
       {
         id: "preset-shift",
+        type: "float",
         name: "uShift",
         value: 0.1,
         min: 0,
@@ -581,6 +646,7 @@ void main() {
     defaultUniforms: [
       {
         id: "preset-size",
+        type: "float",
         name: "uSize",
         value: 0.3,
         min: 0.1,
@@ -589,6 +655,7 @@ void main() {
       },
       {
         id: "preset-pulseSpeed",
+        type: "float",
         name: "uPulseSpeed",
         value: 2.0,
         min: 0.5,
@@ -597,6 +664,7 @@ void main() {
       },
       {
         id: "preset-glow",
+        type: "float",
         name: "uGlow",
         value: 5.0,
         min: 1,

@@ -1,34 +1,98 @@
 import { VERTEX_SHADER } from "./shaders";
+import type {
+  ShaderState,
+  ShaderParams,
+  DynamicUniform,
+  UniformType,
+  UniformValue,
+} from "./types";
 
-export interface ShaderState {
-  gl: WebGLRenderingContext | null;
-  program: WebGLProgram | null;
-  uniforms: {
-    position?: number;
-    resolution?: WebGLUniformLocation | null;
-    time?: WebGLUniformLocation | null;
-    speed?: WebGLUniformLocation | null;
-    lineCount?: WebGLUniformLocation | null;
-    amplitude?: WebGLUniformLocation | null;
-    yOffset?: WebGLUniformLocation | null;
-  };
-  // Cache of dynamic uniform locations, keyed by uniform name
-  dynamicUniforms?: Record<string, WebGLUniformLocation | null>;
-}
+// Re-export types for backward compatibility
+export type {
+  ShaderState,
+  ShaderParams,
+  DynamicUniform,
+  UniformType,
+  UniformValue,
+};
 
-export interface ShaderParams {
-  paused: boolean;
-  pausedTime: number;
-}
+// ============================================================================
+// Utility Functions for Uniform Injection
+// ============================================================================
 
-export interface DynamicUniform {
-  id: string;
-  name: string; // GLSL uniform identifier, e.g. "uParam1"
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-}
+/**
+ * Remove auto-injected uniform declarations from shader code
+ * Only removes uniforms that are not marked as base uniforms
+ */
+export const stripInjectedUniforms = (
+  code: string,
+  dynamicUniforms: DynamicUniform[],
+): string => {
+  try {
+    let result = code;
+    dynamicUniforms
+      .filter((u) => !u.id.startsWith("base-"))
+      .forEach((u) => {
+        const pattern = new RegExp(
+          `\\s*uniform\\s+(float|vec3|vec4)\\s+${u.name}\\s*;`,
+          "g",
+        );
+        result = result.replace(pattern, "");
+      });
+    return result;
+  } catch (error) {
+    console.error("[stripInjectedUniforms] Error:", error);
+    return code;
+  }
+};
+
+/**
+ * Inject uniform declarations into shader code
+ * Only injects uniforms that don't already exist in the code
+ */
+export const injectUniforms = (
+  code: string,
+  dynamicUniforms: DynamicUniform[],
+): string => {
+  try {
+    const precisionMatch = code.match(/precision\s+\w+\s+float;/);
+    if (!precisionMatch) {
+      console.warn("[injectUniforms] No precision statement found");
+      return code;
+    }
+
+    // Only inject uniforms that don't already exist in the code
+    const filteredUniforms = dynamicUniforms
+      .filter((u) => !u.id.startsWith("base-"))
+      .filter((u) => {
+        const uniformPattern = new RegExp(
+          `uniform\\s+(float|vec3|vec4)\\s+${u.name}\\s*;`,
+        );
+        return !uniformPattern.test(code);
+      });
+
+    if (filteredUniforms.length === 0) {
+      return code;
+    }
+
+    const insertPos = precisionMatch.index! + precisionMatch[0].length;
+    const uniformDecls = filteredUniforms
+      .map((u) => {
+        const uniformType = u.type || "float";
+        return `\n  uniform ${uniformType} ${u.name};`;
+      })
+      .join("");
+
+    return code.slice(0, insertPos) + uniformDecls + code.slice(insertPos);
+  } catch (error) {
+    console.error("[injectUniforms] Error:", error);
+    return code;
+  }
+};
+
+// ============================================================================
+// Shader Source Building
+// ============================================================================
 
 // Prepend uniform float declarations for each dynamic uniform to the fragment shader source
 export const buildFragmentSource = (
@@ -47,7 +111,9 @@ export const buildFragmentSource = (
     }
 
     const filteredUniforms = dynamicUniforms.filter((u) => {
-      const uniformPattern = new RegExp(`uniform\\s+float\\s+${u.name}\\s*;`);
+      const uniformPattern = new RegExp(
+        `uniform\\s+(float|vec3|vec4)\\s+${u.name}\\s*;`,
+      );
       return !uniformPattern.test(baseSource);
     });
 
@@ -57,7 +123,10 @@ export const buildFragmentSource = (
 
     const insertPos = precisionMatch.index! + precisionMatch[0].length;
     const decls = filteredUniforms
-      .map((u) => `\n  uniform float ${u.name};`)
+      .map((u) => {
+        const uniformType = u.type || "float";
+        return `\n  uniform ${uniformType} ${u.name};`;
+      })
       .join("");
 
     return baseSource.slice(0, insertPos) + decls + baseSource.slice(insertPos);
@@ -68,34 +137,56 @@ export const buildFragmentSource = (
   }
 };
 
-export const createShader = (
+const createShader = (
   gl: WebGLRenderingContext,
   type: number,
   source: string,
   onError: (error: string | null) => void,
 ): WebGLShader | null => {
-  const shaderType = type === gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
-
   const shader = gl.createShader(type);
-  if (!shader) {
-    console.error(`[createShader] Failed to create ${shaderType} shader`);
-    return null;
-  }
+  if (!shader) return null;
 
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     const errorLog = gl.getShaderInfoLog(shader);
-    console.error(
-      `[createShader] ${shaderType} shader compilation failed:`,
-      errorLog,
-    );
-    gl.deleteShader(shader);
+    const shaderType = type === gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
     onError(`${shaderType} Shader: ${errorLog}`);
+    gl.deleteShader(shader);
     return null;
   }
   return shader;
+};
+
+const createProgram = (
+  gl: WebGLRenderingContext,
+  vertexShader: WebGLShader,
+  fragmentShader: WebGLShader,
+  onError: (error: string | null) => void,
+): WebGLProgram | null => {
+  const program = gl.createProgram();
+  if (!program) return null;
+
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    onError(gl.getProgramInfoLog(program));
+    return null;
+  }
+  return program;
+};
+
+const setupGeometry = (gl: WebGLRenderingContext): void => {
+  const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+    gl.STATIC_DRAW,
+  );
 };
 
 export const initWebGL = (
@@ -106,8 +197,6 @@ export const initWebGL = (
 ): boolean => {
   const gl = canvas.getContext("webgl");
   if (!gl) return false;
-
-  shaderState.current.gl = gl;
 
   const vertexShader = createShader(
     gl,
@@ -121,40 +210,22 @@ export const initWebGL = (
     customFragmentShader,
     onError,
   );
-
   if (!vertexShader || !fragmentShader) return false;
 
-  const program = gl.createProgram();
+  const program = createProgram(gl, vertexShader, fragmentShader, onError);
   if (!program) return false;
 
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
+  setupGeometry(gl);
 
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    const errorLog = gl.getProgramInfoLog(program);
-    onError(errorLog);
-    return false;
-  }
-
-  shaderState.current.program = program;
-
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-    gl.STATIC_DRAW,
-  );
-
-  shaderState.current.uniforms = {
-    position: gl.getAttribLocation(program, "a_position"),
-    resolution: gl.getUniformLocation(program, "iResolution"),
-    time: gl.getUniformLocation(program, "iTime"),
-    speed: gl.getUniformLocation(program, "uSpeed"),
-    lineCount: gl.getUniformLocation(program, "uLineCount"),
-    amplitude: gl.getUniformLocation(program, "uAmplitude"),
-    yOffset: gl.getUniformLocation(program, "uYOffset"),
+  shaderState.current = {
+    gl,
+    program,
+    uniforms: {
+      position: gl.getAttribLocation(program, "a_position"),
+      resolution: gl.getUniformLocation(program, "iResolution"),
+      time: gl.getUniformLocation(program, "iTime"),
+    },
+    dynamicUniforms: {},
   };
 
   return true;
@@ -163,40 +234,47 @@ export const initWebGL = (
 export const renderShader = (
   canvas: HTMLCanvasElement,
   shaderState: ShaderState,
-  params: ShaderParams & { dynamicUniforms?: DynamicUniform[] },
+  params: ShaderParams,
   currentTime: number,
 ): void => {
-  const { gl, program, uniforms } = shaderState;
+  const { gl, program, uniforms, dynamicUniforms } = shaderState;
   if (!gl || !program) return;
 
   gl.useProgram(program);
 
+  // Setup vertex attributes
   if (uniforms.position !== undefined) {
     gl.enableVertexAttribArray(uniforms.position);
     gl.vertexAttribPointer(uniforms.position, 2, gl.FLOAT, false, 0, 0);
   }
 
-  if (uniforms.resolution) {
+  // Set built-in uniforms
+  if (uniforms.resolution)
     gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
-  }
-  if (uniforms.time) {
-    gl.uniform1f(uniforms.time, currentTime);
-  }
+  if (uniforms.time) gl.uniform1f(uniforms.time, currentTime);
 
-  // Apply all dynamic uniforms (including base ones like uSpeed, uLineCount, etc.)
-  if (params.dynamicUniforms && params.dynamicUniforms.length > 0) {
-    if (!shaderState.dynamicUniforms) shaderState.dynamicUniforms = {};
-    for (const u of params.dynamicUniforms) {
-      if (!(u.name in shaderState.dynamicUniforms)) {
-        shaderState.dynamicUniforms[u.name] = gl.getUniformLocation(
-          program,
-          u.name,
-        );
-      }
-      const loc = shaderState.dynamicUniforms[u.name];
-      if (loc) gl.uniform1f(loc, u.value);
+  // Set dynamic uniforms
+  params.dynamicUniforms?.forEach((uniform) => {
+    const { name, type, value } = uniform;
+    const uniformType = type || "float";
+
+    if (!dynamicUniforms[name]) {
+      dynamicUniforms[name] = gl.getUniformLocation(program, name);
     }
-  }
+    const location = dynamicUniforms[name];
+    if (!location) return;
+
+    // Call appropriate uniform function based on type
+    if (uniformType === "float") {
+      gl.uniform1f(location, value as number);
+    } else if (uniformType === "vec3") {
+      const [r, g, b] = value as [number, number, number];
+      gl.uniform3f(location, r, g, b);
+    } else if (uniformType === "vec4") {
+      const [r, g, b, a] = value as [number, number, number, number];
+      gl.uniform4f(location, r, g, b, a);
+    }
+  });
 
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -206,7 +284,7 @@ export const renderShader = (
 export const captureShaderAsImage = (
   canvas: HTMLCanvasElement,
   shaderState: ShaderState,
-  params: ShaderParams & { dynamicUniforms?: DynamicUniform[] },
+  params: ShaderParams,
   currentTime: number,
   onCapture: (imageData: Uint8Array) => void,
 ): void => {
@@ -214,10 +292,7 @@ export const captureShaderAsImage = (
 
   canvas.toBlob((blob) => {
     if (!blob) return;
-
-    blob.arrayBuffer().then((buffer) => {
-      onCapture(new Uint8Array(buffer));
-    });
+    blob.arrayBuffer().then((buffer) => onCapture(new Uint8Array(buffer)));
   }, "image/png");
 };
 
@@ -227,71 +302,36 @@ export const recompileShader = (
   newShaderCode: string,
   onError: (error: string | null) => void,
 ): boolean => {
-  try {
-    const testFragmentShader = createShader(
-      gl,
-      gl.FRAGMENT_SHADER,
-      newShaderCode,
-      onError,
-    );
-    if (!testFragmentShader) {
-      throw new Error("Shader compilation failed");
-    }
+  const vertexShader = createShader(
+    gl,
+    gl.VERTEX_SHADER,
+    VERTEX_SHADER,
+    onError,
+  );
+  const fragmentShader = createShader(
+    gl,
+    gl.FRAGMENT_SHADER,
+    newShaderCode,
+    onError,
+  );
+  if (!vertexShader || !fragmentShader) return false;
 
-    const vertexShader = createShader(
-      gl,
-      gl.VERTEX_SHADER,
-      VERTEX_SHADER,
-      onError,
-    );
-    if (!vertexShader) {
-      throw new Error("Failed to create vertex shader");
-    }
+  const newProgram = createProgram(gl, vertexShader, fragmentShader, onError);
+  if (!newProgram) return false;
 
-    const newProgram = gl.createProgram();
-    if (!newProgram) {
-      throw new Error("Failed to create program");
-    }
-
-    gl.attachShader(newProgram, vertexShader);
-    gl.attachShader(newProgram, testFragmentShader);
-    gl.linkProgram(newProgram);
-
-    if (!gl.getProgramParameter(newProgram, gl.LINK_STATUS)) {
-      const log = gl.getProgramInfoLog(newProgram);
-      throw new Error(log || "Program linking failed");
-    }
-
-    if (shaderState.current.program) {
-      gl.deleteProgram(shaderState.current.program);
-    }
-
-    shaderState.current.program = newProgram;
-
-    shaderState.current.uniforms = {
-      position: gl.getAttribLocation(newProgram, "a_position"),
-      resolution: gl.getUniformLocation(newProgram, "iResolution"),
-      time: gl.getUniformLocation(newProgram, "iTime"),
-      speed: gl.getUniformLocation(newProgram, "uSpeed"),
-      lineCount: gl.getUniformLocation(newProgram, "uLineCount"),
-      amplitude: gl.getUniformLocation(newProgram, "uAmplitude"),
-      yOffset: gl.getUniformLocation(newProgram, "uYOffset"),
-    };
-
-    // Reset dynamic uniform cache after recompile
-    shaderState.current.dynamicUniforms = {};
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-      gl.STATIC_DRAW,
-    );
-
-    return true;
-  } catch (error) {
-    onError((error as Error).message);
-    return false;
+  if (shaderState.current.program) {
+    gl.deleteProgram(shaderState.current.program);
   }
+
+  setupGeometry(gl);
+
+  shaderState.current.program = newProgram;
+  shaderState.current.uniforms = {
+    position: gl.getAttribLocation(newProgram, "a_position"),
+    resolution: gl.getUniformLocation(newProgram, "iResolution"),
+    time: gl.getUniformLocation(newProgram, "iTime"),
+  };
+  shaderState.current.dynamicUniforms = {};
+
+  return true;
 };

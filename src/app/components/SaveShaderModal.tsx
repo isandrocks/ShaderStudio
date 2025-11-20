@@ -1,17 +1,6 @@
 import React, { useState } from "react";
-import type { DynamicUniform, ShaderState } from "../webgl";
+import type { DynamicUniform, ShaderState, SavedShader } from "../types";
 import { renderShader } from "../webgl";
-
-interface SavedShader {
-  id: string;
-  name: string;
-  description?: string;
-  fragmentShader: string;
-  dynamicUniforms: DynamicUniform[];
-  createdAt: number;
-  updatedAt: number;
-  thumbnail?: string;
-}
 
 interface SaveShaderModalProps {
   isOpen: boolean;
