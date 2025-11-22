@@ -70,7 +70,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       </div>
 
       {/* Scrollable Dynamic Uniforms */}
-      <div className="flex-1 overflow-y-auto px-3 pb-2 flex flex-col gap-3 scrollbar-dark">
+      <div className="flex-1 overflow-y-auto px-3 pb-2 flex flex-col gap-3">
       {dynamicUniforms.map((u) => {
         const uniformType = u.type || "float";
 

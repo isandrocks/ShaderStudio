@@ -1,5 +1,5 @@
 // This shows the HTML page in "ui.html".
-figma.showUI(__html__, { themeColors: true, width: 825, height: 650 });
+figma.showUI(__html__, { themeColors: true, width: 825, height: 575 });
 
 let currentRect: RectangleNode | null = null;
 
@@ -83,28 +83,33 @@ figma.ui.onmessage = async (msg: {
 }) => {
   try {
     switch (msg.type) {
-      case "create-rectangle":
+      case "create-rectangle": {
         createRectangle();
         break;
+      }
 
-      case "shader-rendered":
+      case "shader-rendered": {
         applyShaderToRectangle(msg.imageData!);
         break;
+      }
 
-      case "shader-error":
+      case "shader-error": {
         figma.notify(msg.error || "Shader rendering error", { error: true });
         throw new Error(`Shader Error: ${msg.error}`);
+      }
 
-      case "cancel":
+      case "cancel": {
         figma.closePlugin();
         break;
+      }
 
-      case "load-shaders":
+      case "load-shaders": {
         const shaders = await loadSavedShaders();
         figma.ui.postMessage({ type: "shaders-loaded", shaders });
         break;
+      }
 
-      case "save-shader":
+      case "save-shader": {
         try {
           const shaders = await loadSavedShaders();
           const existingIndex = shaders.findIndex(
@@ -128,8 +133,9 @@ figma.ui.onmessage = async (msg: {
           });
         }
         break;
+      }
 
-      case "delete-shader":
+      case "delete-shader": {
         try {
           const shaders = await loadSavedShaders();
           const filtered = shaders.filter((s) => s.id !== msg.id);
@@ -142,6 +148,7 @@ figma.ui.onmessage = async (msg: {
           });
         }
         break;
+      }
     }
   } catch (error) {
     console.error("[controller] Error:", error);

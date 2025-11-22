@@ -422,10 +422,6 @@ const App: React.FC = () => {
       className="font-sans bg-[#1e1e1e] text-white p-4 flex flex-col
         items-center gap-4 overflow-hidden"
     >
-      <h2 className="text-lg font-semibold text-white mb-2 text-center">
-        Shader Studio
-      </h2>
-
       {criticalError && (
         <div
           className="w-full bg-red-900/30 border border-red-500 rounded p-3
@@ -467,7 +463,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      <p className="text-[11px] text-[#999999] text-center max-w-lg">
+      <p className="text-[11px] text-[#999999] text-center max-w-lg absolute bottom-4">
         Live shader preview above • Adjust parameters in real-time
       </p>
 

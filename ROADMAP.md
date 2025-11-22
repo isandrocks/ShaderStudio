@@ -7,6 +7,8 @@ This document outlines planned features and the technical requirements needed to
 
 ## 1. Multi-Type Uniform Support (vec3/vec4 with Color Pickers)
 
+### ✅ Implementation Status: COMPLETED (November 19, 2025)
+
 ### Current State
 - Only `float` uniforms supported with slider controls
 - All uniforms stored as `DynamicUniform` with scalar values
@@ -56,55 +58,404 @@ This document outlines planned features and the technical requirements needed to
 
 ---
 
-## 2. Visual Variable System with Drag-and-Drop
+## 2. Visual Shader Builder (No-Code Editor)
 
 ### Current State
-- Uniforms can only be configured via text input in modal
-- No visual relationship between uniforms
+- Users must write GLSL code manually in Advanced Editor
+- Only option for non-coders is to use presets and adjust sliders
+- No visual way to create shader effects without programming knowledge
 
-### Proposed Changes
+### Vision
+Create a visual, node-based or block-based shader builder that allows users to create effects by:
+- Combining pre-built effect blocks (waves, gradients, noise, etc.)
+- Connecting parameters to effect properties
+- Layering and blending multiple effects
+- **No GLSL knowledge required**
+
+---
+
+### Approach A: Block-Based Builder (Recommended - Simplest)
+
+**Concept**: Like Scratch or visual scripting - drag blocks that represent shader operations and snap them together.
 
 #### Architecture Changes
-- **New data structure for variables**:
+
+- **Effect Block System**:
   ```typescript
-  interface ShaderVariable {
+  interface EffectBlock {
     id: string;
-    name: string;
-    expression: string; // e.g., "uSpeed * 2.0 + uAmplitude"
-    dependsOn: string[]; // Array of uniform IDs
+    type: 'shape' | 'pattern' | 'transform' | 'color' | 'blend';
+    name: string; // "Circle", "Wave", "Gradient", "Multiply", etc.
+    icon: string; // Emoji or SVG icon
+    glslTemplate: string; // Pre-written GLSL function
+    inputs: BlockInput[]; // What parameters it accepts
+    outputs: BlockOutput[]; // What it produces
+  }
+
+  interface BlockInput {
+    id: string;
+    label: string;
+    type: 'float' | 'vec3' | 'coordinate' | 'color';
+    defaultValue: UniformValue | string; // Can link to uniform or constant
+    connectedTo?: string; // ID of connected output
+  }
+
+  interface BlockOutput {
+    id: string;
+    label: string;
+    type: 'float' | 'vec3' | 'vec4';
+  }
+
+  interface BlockInstance {
+    id: string;
+    blockType: string; // References EffectBlock.id
+    position: { x: number, y: number }; // UI position in canvas
+    inputValues: Record<string, UniformValue | string>; // Parameter values or connections
   }
   ```
 
-- **Create new components**:
-  - `VariableBuilder.tsx` - Visual expression builder
-  - `UniformNode.tsx` - Draggable uniform representation
-  - `VariableCanvas.tsx` - Drop zone for building expressions
+- **Block Library** (25-30 pre-built blocks):
   
-- **Implement drag-and-drop**:
-  - Use `react-dnd` or native HTML5 drag-and-drop API
-  - Create visual nodes that represent uniforms
-  - Allow dragging uniforms into expression builder
+  **Shapes**:
+  - Circle (inputs: center, radius, softness)
+  - Rectangle (inputs: center, size, corner radius)
+  - Ring (inputs: center, inner radius, outer radius)
+  - Star (inputs: center, points, size)
+  
+  **Patterns**:
+  - Wave (inputs: frequency, amplitude, speed, direction)
+  - Grid (inputs: cell size, line thickness)
+  - Checkerboard (inputs: scale, rotation)
+  - Radial Repeat (inputs: count, offset)
+  
+  **Colors**:
+  - Solid Color (inputs: color, alpha)
+  - Gradient (inputs: color1, color2, angle, position)
+  - Rainbow (inputs: speed, saturation)
+  - HSV Adjust (inputs: hue shift, saturation, brightness)
+  
+  **Transforms**:
+  - Move (inputs: x offset, y offset)
+  - Rotate (inputs: angle, center)
+  - Scale (inputs: scale x, scale y, center)
+  - Distort (inputs: strength, frequency)
+  
+  **Blending**:
+  - Mix (inputs: layer1, layer2, blend amount)
+  - Multiply (inputs: layer1, layer2)
+  - Add (inputs: layer1, layer2)
+  - Overlay (inputs: layer1, layer2)
+  
+  **Effects**:
+  - Glow (inputs: intensity, size)
+  - Blur (inputs: amount, samples)
+  - Noise (inputs: scale, speed)
+  - Ripple (inputs: center, frequency, amplitude)
 
-- **Expression evaluation**:
-  - Parse visual expressions into GLSL code
-  - Inject computed variables into shader as `float varName = expression;`
-  - Validate expressions for GLSL syntax
+- **Code Generation**:
+  - Each block has a GLSL template with placeholders
+  - Builder generates function calls in correct order
+  - Links uniform parameters to block inputs
+  - Example:
+    ```glsl
+    // User builds: Circle -> Rainbow Color -> Glow
+    
+    // Generated GLSL:
+    float circle1 = sdCircle(uv, vec2(0.5), uRadius1);
+    vec3 color1 = rainbow(uv, uSpeed1);
+    vec3 result = glow(circle1 * color1, uGlowIntensity);
+    gl_FragColor = vec4(result, 1.0);
+    ```
 
-#### UI Changes
-- New tab/panel for "Variables" alongside Parameters
-- Visual node graph showing uniform dependencies
-- Expression preview showing generated GLSL code
+#### UI Components
+
+- **`VisualBuilder.tsx`**: Main visual editor interface
+  - Split view: Block palette (left) + Canvas (center) + Properties (right)
+  - Drag blocks from palette to canvas
+  - Connect blocks by drawing lines between outputs/inputs
+  - Visual preview updates in real-time
+
+- **`BlockPalette.tsx`**: Categorized library of effect blocks
+  - Search/filter blocks by name or category
+  - Drag blocks onto canvas to instantiate
+  - Tooltip showing what each block does
+
+- **`BlockNode.tsx`**: Individual block instance on canvas
+  - Shows block name and icon
+  - Input ports on left, output ports on right
+  - Click to select, shows properties in right panel
+  - Delete button to remove
+
+- **`ConnectionLine.tsx`**: Visual line connecting blocks
+  - Curved lines (Bezier) connecting outputs to inputs
+  - Color-coded by data type (float=blue, vec3=green, vec4=orange)
+  - Click to delete connection
+
+- **`BlockProperties.tsx`**: Right panel showing selected block's parameters
+  - Links to existing dynamic uniforms via dropdown
+  - Or set constant values
+  - Example: "Circle radius → uRadius1 (slider)"
+
+#### User Workflow Example
+
+1. **Create Background**:
+   - Drag "Gradient" block to canvas
+   - Set color1 = blue, color2 = purple
+
+2. **Add Animation**:
+   - Drag "Wave" block
+   - Connect to "Distort" block
+   - Link Wave's "speed" input to existing uniform `uSpeed`
+
+3. **Add Shape**:
+   - Drag "Circle" block
+   - Link "radius" to uniform `uSize`
+   - Drag "Rainbow Color" block
+   - Connect Circle output → Rainbow input
+
+4. **Combine**:
+   - Drag "Mix" block
+   - Connect Gradient output → Mix input1
+   - Connect Rainbow output → Mix input2
+   - Set blend amount = 0.5
+
+5. **Add Effect**:
+   - Drag "Glow" block
+   - Connect Mix output → Glow input
+   - Link glow intensity to uniform `uGlow`
+
+Result: Animated gradient background with a rainbow circle that pulses with adjustable glow.
+
+#### Implementation Strategy
+
+**Phase 1: Core System (8-10 hours)**
+- Build block data structure and registry
+- Create canvas with drag-and-drop (can use existing uniform drag functionality as reference)
+- Implement basic block rendering
+- Connection line drawing
+- GLSL code generation from block graph
+
+**Phase 2: Block Library (6-8 hours)**
+- Implement 10-15 essential blocks
+- Write GLSL templates for each
+- Test each block independently
+- Create block icons/visuals
+
+**Phase 3: Integration (4-6 hours)**
+- Link blocks to existing dynamic uniforms system
+- Properties panel for parameter mapping
+- Real-time preview updates
+- Error handling for invalid connections
+
+**Phase 4: Polish (4-6 hours)**
+- Block palette with categories
+- Save/load block graphs
+- Undo/redo for block operations
+- Help tooltips and tutorials
+
+#### Drag Uniform Integration
+
+**Option 1: Direct Reference (No System Rewrite)**
+- In BlockProperties panel, show dropdown of existing uniforms
+- User selects which uniform to bind to block input
+- System references uniform by ID (no data duplication)
+- Changes to uniform sliders immediately affect blocks using it
+
+**Option 2: Drag-and-Drop Uniform (Minor Addition)**
+- Make uniform labels in ControlPanel draggable
+- User drags uniform name → drops on block input port
+- Creates binding between uniform and block parameter
+- Visual indicator (color-coded line) shows connection
+- Implementation: Add `draggable` attribute to SliderControl label, handle drop events in BlockNode
+
+**Recommended**: Option 1 is simpler and doesn't require system rewrite. Option 2 adds nice UX but is optional enhancement.
+
+#### Advantages
+- ✅ **No coding required** - purely visual
+- ✅ **Beginner-friendly** - clear cause-and-effect
+- ✅ **Reusable uniforms** - same slider controls multiple blocks
+- ✅ **Immediate feedback** - see changes in real-time
+- ✅ **Discoverable** - explore effects by dragging blocks
+- ✅ **Extendable** - easy to add new blocks over time
 
 #### Challenges
-- **Complexity**: Visual programming interface requires significant UX design
-- **GLSL generation**: Must ensure valid syntax from visual expressions
-- **Performance**: Real-time shader recompilation on variable changes
+- **GLSL generation complexity**: Ensuring valid code from any block combination
+- **Block execution order**: Must topologically sort blocks before generating code
+- **Type validation**: Prevent connecting incompatible output→input types
+- **Performance**: Many blocks = longer generated shader code
+- **Learning curve**: Users must understand block inputs/outputs
 
 #### Bundle Impact
-- Drag-and-drop library: ~30-60 KB
+- Block templates and metadata: ~15-25 KB
+- React Flow or similar graph library: ~80-120 KB (or build custom with native drag-and-drop)
+- Icon assets: ~5-10 KB
 
 #### Complexity: **High**
+**Estimated Time**: 22-30 hours
+
+---
+
+### Approach B: Layer-Based Builder (Simpler Alternative)
+
+**Concept**: Like Photoshop layers - stack effects on top of each other with blend modes.
+
+#### Architecture Changes
+
+```typescript
+interface EffectLayer {
+  id: string;
+  name: string;
+  type: 'shape' | 'pattern' | 'gradient' | 'effect';
+  visible: boolean;
+  opacity: number; // 0-1
+  blendMode: 'normal' | 'multiply' | 'add' | 'overlay' | 'screen';
+  effect: EffectConfig; // Type-specific configuration
+  order: number; // Layer stacking order
+}
+
+interface EffectConfig {
+  // Varies by layer type
+  // Shape layer:
+  shapeType?: 'circle' | 'rect' | 'star';
+  shapeParams?: Record<string, UniformValue | string>; // Can reference uniforms
+  
+  // Pattern layer:
+  patternType?: 'wave' | 'grid' | 'noise';
+  patternParams?: Record<string, UniformValue | string>;
+  
+  // Gradient layer:
+  gradientColors?: [string, string];
+  gradientAngle?: number;
+}
+```
+
+#### UI Components
+
+- **`LayerPanel.tsx`**: Left sidebar with layer stack
+  - Each layer is a card with thumbnail preview
+  - Drag to reorder layers
+  - Toggle visibility, adjust opacity
+  - Add/delete/duplicate layers
+
+- **`EffectPicker.tsx`**: Modal to add new layer
+  - Grid of effect templates (with icons)
+  - Click to add layer with that effect
+  - Categories: Backgrounds, Shapes, Patterns, Effects
+
+- **`LayerProperties.tsx`**: Right panel for selected layer
+  - Effect-specific parameters
+  - Link parameters to uniforms (dropdown)
+  - Blend mode selector
+  - Opacity slider
+
+#### User Workflow Example
+
+1. Add "Gradient" layer (background)
+2. Add "Wave" layer on top (distortion effect)
+3. Add "Circle" layer → link size to uniform
+4. Add "Noise" layer → set blend mode to "overlay"
+5. Reorder layers by dragging
+6. Adjust each layer's opacity and blend mode
+
+Result: Layered composition rendered as single shader.
+
+#### Code Generation
+- Render layers bottom-to-top
+- Apply blend mode between each layer
+- Generate GLSL with function calls per layer
+
+#### Advantages
+- ✅ **Very intuitive** - familiar layer metaphor
+- ✅ **Simpler than node graph** - no connection management
+- ✅ **Easier to implement** - linear layer stack vs. graph
+- ✅ **Quick experimentation** - add/remove/reorder layers easily
+
+#### Challenges
+- ❌ **Less flexible** - can't create complex connections between effects
+- ❌ **Limited control flow** - linear only (no branching)
+- ⚠️ **Blend mode limitations** - some effects don't blend well
+
+#### Complexity: **Medium**
 **Estimated Time**: 12-16 hours
+
+---
+
+### Approach C: Preset Combiner (Simplest)
+
+**Concept**: Combine multiple presets together with blend modes and parameters.
+
+#### Architecture Changes
+
+```typescript
+interface PresetInstance {
+  id: string;
+  presetId: string; // References SHADER_PRESETS
+  uniforms: DynamicUniform[]; // Independent copy of uniforms
+  opacity: number;
+  blendMode: string;
+  enabled: boolean;
+}
+```
+
+#### UI
+- Select 2-3 presets from gallery
+- Each preset gets its own set of parameter sliders
+- Adjust blend mode and opacity for each
+- System merges shaders together
+
+#### Advantages
+- ✅ **Minimal new code** - reuses existing preset system
+- ✅ **Easy to understand** - just mixing existing effects
+- ✅ **Quick to implement** - mostly UI work
+
+#### Challenges
+- ❌ **Very limited** - can only combine what's in preset library
+- ❌ **Not truly "building"** - more like mixing
+- ⚠️ **Shader merging complexity** - combining GLSL code is non-trivial
+
+#### Complexity: **Low-Medium**
+**Estimated Time**: 6-10 hours
+
+---
+
+### Recommended Approach: **A (Block-Based Builder)**
+
+**Why Block-Based wins**:
+1. **No GLSL knowledge needed** - purely visual, drag-and-drop
+2. **Maximum flexibility** - can create unique effects, not just combinations
+3. **Discoverable** - users learn by exploring block library
+4. **Scalable** - easy to add more blocks over time
+5. **Industry standard** - similar to Unreal Blueprints, Blender nodes, TouchDesigner
+
+**Implementation Path**:
+1. Start with 10 core blocks (shapes, gradients, basic effects)
+2. Build visual editor with drag-and-drop
+3. Implement GLSL code generation
+4. Add uniform binding (dropdown in properties panel)
+5. Expand block library based on user feedback
+6. *Optional*: Add drag-and-drop uniforms as enhancement
+
+**Uniform Integration (No Rewrite Needed)**:
+- Blocks reference uniforms by ID via dropdown selection
+- Existing `DynamicUniform` system unchanged
+- `buildFragmentSource()` injects uniforms as usual
+- Block code generator inserts uniform references in GLSL templates
+
+**Fallback to Advanced Editor**:
+- Keep text editor for power users
+- "View Generated Code" button to see GLSL from blocks
+- "Import to Visual Builder" to reverse-engineer simple shaders (stretch goal)
+
+---
+
+### Future Enhancements
+
+Once core block system exists:
+- **Custom blocks**: Let users save block combinations as new blocks
+- **Block templates**: Pre-configured block graphs as starting points
+- **Animation blocks**: Blocks that animate over time without uniforms
+- **3D blocks**: Raymarching primitives (sphere, box, etc.)
+- **Import GLSL functions**: Turn custom code into reusable blocks
 
 ---
 
@@ -205,7 +556,7 @@ This document outlines planned features and the technical requirements needed to
 
 ## 4. Shader Save/Load System
 
-### ✅ Implementation Status: COMPLETED
+### ✅ Implementation Status: COMPLETED (November 19, 2025)
 
 ### Current State
 - No persistence - shaders lost on plugin close
