@@ -18,3 +18,4 @@ fshad.glsl
 .github/prompts/plan-shaderSaveLoadSystem.prompt.md
 .vscode/launch.json
 save48x48.svg
+package-lock.json
