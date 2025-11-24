@@ -6,6 +6,7 @@ import UniformConfigModal from "./components/UniformConfigModal";
 import { PresetGallery } from "./components/PresetGallery";
 import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
+import BlockBuilderModal from "./components/BlockBuilderModal";
 import { ShaderPreset, SHADER_PRESETS } from "./presets";
 import { useSyncedRef } from "./hooks/useSyncedRef";
 import type {
@@ -15,6 +16,7 @@ import type {
   UniformValue,
   SavedShader,
   ModalType,
+  BlockInstance,
 } from "./types";
 import {
   initWebGL,
@@ -25,6 +27,7 @@ import {
   stripInjectedUniforms,
   injectUniforms,
 } from "./webgl";
+import { generateShaderFromBlocks, validateBlockGraph } from "./blocks/generator";
 
 /**
  * Ensure backward compatibility by defaulting type to 'float' if missing
@@ -52,6 +55,7 @@ const App: React.FC = () => {
   const [dynamicUniforms, setDynamicUniforms] = useState<DynamicUniform[]>(
     SHADER_PRESETS[0].defaultUniforms,
   );
+  const [blockGraph, setBlockGraph] = useState<BlockInstance[]>([]);
 
   const shaderStateRef = useRef<ShaderState>({
     gl: null,
@@ -232,6 +236,14 @@ const App: React.FC = () => {
 
       const uniformsWithTypes = ensureUniformTypes(shader.dynamicUniforms);
       setDynamicUniforms(uniformsWithTypes);
+      
+      // Load block graph if present
+      if (shader.blockGraph) {
+        setBlockGraph(shader.blockGraph);
+      } else {
+        setBlockGraph([]);
+      }
+      
       setShaderError("");
 
       // Recompile shader
@@ -308,6 +320,38 @@ const App: React.FC = () => {
     setShaderCode(defaultShader);
     customFragmentShaderRef.current = null;
     handleRecompileShader(defaultShader);
+  };
+
+  /**
+   * Handle applying blocks from Block Builder
+   */
+  const handleApplyBlocks = (blocks: BlockInstance[]) => {
+    try {
+      setShaderError("");
+
+      // Validate block graph
+      const errors = validateBlockGraph(blocks);
+      if (errors.length > 0) {
+        setShaderError(`Block validation failed:\n${errors.join("\n")}`);
+        return;
+      }
+
+      // Generate GLSL code from blocks
+      const generatedShader = generateShaderFromBlocks(blocks, dynamicUniforms);
+      
+      // Update state
+      setBlockGraph(blocks);
+      customFragmentShaderRef.current = generatedShader;
+
+      // Recompile shader
+      if (handleRecompileShader(generatedShader)) {
+        const injectedCode = injectUniforms(generatedShader, dynamicUniforms);
+        setShaderCode(injectedCode);
+      }
+    } catch (error) {
+      console.error("[handleApplyBlocks] EXCEPTION:", error);
+      setShaderError(`Block generation failed: ${(error as Error).message}`);
+    }
   };
 
   useEffect(() => {
@@ -441,6 +485,7 @@ const App: React.FC = () => {
           onPresetsClick={() => setOpenModal("presets")}
           onSaveShader={() => setOpenModal("save")}
           onOpenSavedShaders={() => setOpenModal("saved-shaders")}
+          onBlockBuilderClick={() => setOpenModal("block-builder")}
           dynamicUniforms={dynamicUniforms}
           onAddUniform={() => setOpenModal("config")}
           onUpdateUniform={updateUniform}
@@ -491,6 +536,7 @@ const App: React.FC = () => {
         shaderStateRef={shaderStateRef}
         getCurrentTime={getCurrentTime}
         isPaused={params.paused}
+        blockGraph={blockGraph}
       />
 
       <SavedShadersGallery
@@ -499,6 +545,14 @@ const App: React.FC = () => {
         onClose={() => setOpenModal("none")}
         onLoadShader={loadSavedShader}
         onDeleteShader={deleteSavedShader}
+      />
+
+      <BlockBuilderModal
+        isOpen={openModal === "block-builder"}
+        onClose={() => setOpenModal("none")}
+        onApply={handleApplyBlocks}
+        initialBlocks={blockGraph}
+        dynamicUniforms={dynamicUniforms}
       />
     </div>
   );

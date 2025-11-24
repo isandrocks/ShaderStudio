@@ -11,6 +11,7 @@ interface ControlPanelProps {
   onPresetsClick: () => void;
   onSaveShader: () => void;
   onOpenSavedShaders: () => void;
+  onBlockBuilderClick: () => void;
   dynamicUniforms: DynamicUniform[];
   onAddUniform: () => void;
   onUpdateUniform: (id: string, value: UniformValue) => void;
@@ -23,6 +24,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onPresetsClick,
   onSaveShader,
   onOpenSavedShaders,
+  onBlockBuilderClick,
   dynamicUniforms,
   onAddUniform,
   onUpdateUniform,
@@ -163,6 +165,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                   duration-150 outline-none border-none hover:bg-[#454545]"
               >
                 🎨 Load Preset
+              </button>
+              <button
+                onClick={onBlockBuilderClick}
+                className="w-full h-7 px-3 text-xs font-medium text-left
+                  bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
+                  duration-150 outline-none border-none hover:bg-[#454545]"
+              >
+                🧩 Block Builder
               </button>
               <button
                 onClick={handleMyShadersClick}

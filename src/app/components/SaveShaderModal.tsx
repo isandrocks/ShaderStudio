@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { DynamicUniform, ShaderState, SavedShader } from "../types";
+import type { DynamicUniform, ShaderState, SavedShader, BlockInstance } from "../types";
 import { renderShader } from "../webgl";
 
 interface SaveShaderModalProps {
@@ -12,6 +12,7 @@ interface SaveShaderModalProps {
   shaderStateRef: React.MutableRefObject<ShaderState>;
   getCurrentTime: () => number;
   isPaused: boolean;
+  blockGraph?: BlockInstance[];
 }
 
 const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
@@ -24,6 +25,7 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
   shaderStateRef,
   getCurrentTime,
   isPaused,
+  blockGraph,
 }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -171,6 +173,7 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
       createdAt: Date.now(),
       updatedAt: Date.now(),
       thumbnail,
+      blockGraph: blockGraph && blockGraph.length > 0 ? [...blockGraph] : undefined,
     };
 
     // Send to plugin

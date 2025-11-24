@@ -1,5 +1,5 @@
 // This shows the HTML page in "ui.html".
-figma.showUI(__html__, { themeColors: true, width: 825, height: 575 });
+figma.showUI(__html__, { themeColors: true, width: 900, height: 575 });
 
 let currentRect: RectangleNode | null = null;
 

@@ -10,6 +10,7 @@ export type UniformType = "float" | "vec3" | "vec4";
 
 export type UniformValue =
   | number // float
+  | [number, number] // vec2
   | [number, number, number] // vec3 (RGB)
   | [number, number, number, number]; // vec4 (RGBA)
 
@@ -57,6 +58,54 @@ export interface SavedShader {
   createdAt: number;
   updatedAt: number;
   thumbnail?: string;
+  blockGraph?: BlockInstance[]; // Optional: stores visual block builder state
+}
+
+// ============================================================================
+// Block System Types
+// ============================================================================
+
+export type BlockCategory = "shape" | "pattern" | "transform" | "color" | "blend" | "effect";
+
+export type BlockValueType = "float" | "vec2" | "vec3" | "vec4" | "coordinate" | "color";
+
+export interface BlockInput {
+  id: string;
+  label: string;
+  type: BlockValueType;
+  defaultValue: UniformValue | string; // Constant value or uniform reference
+  connectedTo?: string; // ID of connected output (blockId:outputId)
+}
+
+export interface BlockOutput {
+  id: string;
+  label: string;
+  type: BlockValueType;
+}
+
+export interface EffectBlock {
+  id: string;
+  type: BlockCategory;
+  name: string;
+  description: string;
+  icon: string;
+  glslTemplate: string; // Template with {{placeholder}} syntax
+  inputs: BlockInput[];
+  outputs: BlockOutput[];
+}
+
+export interface BlockInstance {
+  id: string;
+  blockType: string; // References EffectBlock.id
+  position: { x: number; y: number };
+  inputValues: Record<string, UniformValue | string>; // Input overrides and connections
+}
+
+export interface BlockConnection {
+  id: string;
+  from: string; // blockId:outputId
+  to: string; // blockId:inputId
+  type: BlockValueType;
 }
 
 // ============================================================================
@@ -69,4 +118,5 @@ export type ModalType =
   | "config"
   | "presets"
   | "save"
-  | "saved-shaders";
+  | "saved-shaders"
+  | "block-builder";
