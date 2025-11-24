@@ -1,20 +1,5 @@
 import { VERTEX_SHADER } from "./shaders";
-import type {
-  ShaderState,
-  ShaderParams,
-  DynamicUniform,
-  UniformType,
-  UniformValue,
-} from "./types";
-
-// Re-export types for backward compatibility
-export type {
-  ShaderState,
-  ShaderParams,
-  DynamicUniform,
-  UniformType,
-  UniformValue,
-};
+import type { ShaderState, ShaderParams, DynamicUniform } from "./types";
 
 // ============================================================================
 // Utility Functions for Uniform Injection
@@ -94,47 +79,16 @@ export const injectUniforms = (
 // Shader Source Building
 // ============================================================================
 
-// Prepend uniform float declarations for each dynamic uniform to the fragment shader source
+/**
+ * Build fragment shader source by injecting dynamic uniform declarations
+ * This is the primary function for shader compilation - it prepends uniform
+ * declarations for each dynamic uniform to the fragment shader source.
+ */
 export const buildFragmentSource = (
   baseSource: string,
   dynamicUniforms: DynamicUniform[] | undefined,
 ): string => {
-  try {
-    if (!dynamicUniforms || dynamicUniforms.length === 0) {
-      return baseSource;
-    }
-
-    const precisionMatch = baseSource.match(/precision\s+\w+\s+float;/);
-    if (!precisionMatch) {
-      console.error("[buildFragmentSource] No precision statement found");
-      return baseSource;
-    }
-
-    const filteredUniforms = dynamicUniforms.filter((u) => {
-      const uniformPattern = new RegExp(
-        `uniform\\s+(float|vec3|vec4)\\s+${u.name}\\s*;`,
-      );
-      return !uniformPattern.test(baseSource);
-    });
-
-    if (filteredUniforms.length === 0) {
-      return baseSource;
-    }
-
-    const insertPos = precisionMatch.index! + precisionMatch[0].length;
-    const decls = filteredUniforms
-      .map((u) => {
-        const uniformType = u.type || "float";
-        return `\n  uniform ${uniformType} ${u.name};`;
-      })
-      .join("");
-
-    return baseSource.slice(0, insertPos) + decls + baseSource.slice(insertPos);
-  } catch (error) {
-    console.error("[buildFragmentSource] Error:", error);
-    console.error("[buildFragmentSource] Stack:", (error as Error).stack);
-    return baseSource;
-  }
+  return injectUniforms(baseSource, dynamicUniforms || []);
 };
 
 const createShader = (

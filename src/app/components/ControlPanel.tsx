@@ -7,7 +7,6 @@ import type { DynamicUniform, UniformValue } from "../types";
 
 interface ControlPanelProps {
   onCreateClick: () => void;
-  onCancelClick: () => void;
   onAdvancedEditorClick: () => void;
   onPresetsClick: () => void;
   onSaveShader: () => void;
@@ -20,7 +19,6 @@ interface ControlPanelProps {
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
   onCreateClick,
-  // onCancelClick, // Removed - X button replaced with Save button
   onAdvancedEditorClick,
   onPresetsClick,
   onSaveShader,
@@ -31,7 +29,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onRemoveUniform,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-  // const [isCanvasDropdownOpen, setIsCanvasDropdownOpen] = React.useState(false); // Mothballed for future export feature
 
   const handleAdvancedEditorClick = () => {
     setIsDropdownOpen(false);
@@ -47,16 +44,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
     setIsDropdownOpen(false);
     onOpenSavedShaders();
   };
-
-  // const handleCreateClick = () => {
-  //   setIsCanvasDropdownOpen(false);
-  //   onCreateClick();
-  // }; // Mothballed for future export feature
-
-  // const handleSaveClick = () => {
-  //   setIsCanvasDropdownOpen(false);
-  //   onSaveShader();
-  // }; // Mothballed for future export feature
 
   return (
     <div
@@ -125,46 +112,6 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           >
             Add to canvas
           </button>
-
-          {/* Mothballed dropdown for future export feature */}
-          {/* <div className="flex-1 relative">
-            <div className="flex gap-0 w-full">
-              <button
-                onClick={handleCreateClick}
-                className="flex-1 h-7 px-4 text-[13px] font-medium bg-primary
-                  text-white rounded-l-md cursor-pointer transition-all
-                  duration-150 outline-none border-none hover:bg-primary-hover
-                  active:bg-primary-active active:scale-[0.98]"
-              >
-                Add to canvas
-              </button>
-              <button
-                onClick={() => setIsCanvasDropdownOpen(!isCanvasDropdownOpen)}
-                className="w-7 h-7 flex items-center justify-center text-white
-                  bg-primary rounded-r-md cursor-pointer transition-all
-                  duration-150 outline-none border-none hover:bg-primary-hover
-                  active:bg-primary-active"
-              >
-                <span className="text-[10px]">▼</span>
-              </button>
-            </div>
-
-            {isCanvasDropdownOpen && (
-              <div
-                className="absolute top-full left-0 right-0 z-10 bg-[#3c3c3c]
-                  border border-[#4c4c4c] rounded-sm overflow-hidden shadow-lg"
-              >
-                <button
-                  onClick={handleSaveClick}
-                  className="w-full h-7 px-3 text-xs font-medium text-left
-                    bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
-                    duration-150 outline-none border-none hover:bg-[#454545]"
-                >
-                  💾 Save
-                </button>
-              </div>
-            )}
-          </div> */}
 
           <button
             onClick={onSaveShader}

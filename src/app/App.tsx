@@ -7,6 +7,7 @@ import { PresetGallery } from "./components/PresetGallery";
 import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
 import { ShaderPreset, SHADER_PRESETS } from "./presets";
+import { useSyncedRef } from "./hooks/useSyncedRef";
 import type {
   ShaderState,
   DynamicUniform,
@@ -24,6 +25,16 @@ import {
   stripInjectedUniforms,
   injectUniforms,
 } from "./webgl";
+
+/**
+ * Ensure backward compatibility by defaulting type to 'float' if missing
+ */
+const ensureUniformTypes = (uniforms: DynamicUniform[]): DynamicUniform[] => {
+  return uniforms.map((u) => ({
+    ...u,
+    type: u.type || ("float" as UniformType),
+  }));
+};
 
 const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,13 +62,16 @@ const App: React.FC = () => {
   const startTimeRef = useRef(Date.now());
   const animationFrameRef = useRef<number | undefined>(undefined);
   const customFragmentShaderRef = useRef<string | null>(null);
-  const paramsRef = useRef(params);
-  const dynamicUniformsRef = useRef(dynamicUniforms);
+  const paramsRef = useSyncedRef(params);
+  const dynamicUniformsRef = useSyncedRef(dynamicUniforms);
 
   const handleShaderError = (error: string | null) => {
     parent.postMessage({ pluginMessage: { type: "shader-error", error } }, "*");
   };
 
+  /**
+   * Get current shader time - respects pause state
+   */
   const getCurrentTime = (): number => {
     return paramsRef.current.paused
       ? paramsRef.current.pausedTime
@@ -163,12 +177,13 @@ const App: React.FC = () => {
         finalName = `${config.name}${counter}`;
       }
 
-      const newU: DynamicUniform = {
+      const newUniform: DynamicUniform = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         ...config,
         name: finalName,
       };
-      setDynamicUniforms((prev) => [...prev, newU]);
+      
+      setDynamicUniforms((prev) => [...prev, newUniform]);
       setOpenModal("none");
     } catch (error) {
       console.error("[addUniform] Error:", error);
@@ -201,13 +216,7 @@ const App: React.FC = () => {
     try {
       customFragmentShaderRef.current = preset.fragmentShader;
       setShaderCode(preset.fragmentShader);
-
-      // Ensure backward compatibility - default type to 'float' if missing
-      const uniformsWithTypes = preset.defaultUniforms.map((u) => ({
-        ...u,
-        type: u.type || ("float" as UniformType),
-      }));
-      setDynamicUniforms(uniformsWithTypes);
+      setDynamicUniforms(ensureUniformTypes(preset.defaultUniforms));
       setShaderError("");
     } catch (error) {
       console.error("[loadPreset] Error:", error);
@@ -221,11 +230,7 @@ const App: React.FC = () => {
       customFragmentShaderRef.current = shader.fragmentShader;
       setShaderCode(shader.fragmentShader);
 
-      // Ensure backward compatibility - default type to 'float' if missing
-      const uniformsWithTypes = shader.dynamicUniforms.map((u) => ({
-        ...u,
-        type: u.type || ("float" as UniformType),
-      }));
+      const uniformsWithTypes = ensureUniformTypes(shader.dynamicUniforms);
       setDynamicUniforms(uniformsWithTypes);
       setShaderError("");
 
@@ -280,10 +285,6 @@ const App: React.FC = () => {
     parent.postMessage({ pluginMessage: { type: "create-rectangle" } }, "*");
   };
 
-  const handleCancelClick = () => {
-    parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
-  };
-
   const handleApplyShader = () => {
     try {
       setShaderError("");
@@ -308,15 +309,6 @@ const App: React.FC = () => {
     customFragmentShaderRef.current = null;
     handleRecompileShader(defaultShader);
   };
-
-  // Keep refs in sync
-  useEffect(() => {
-    paramsRef.current = params;
-  }, [params]);
-
-  useEffect(() => {
-    dynamicUniformsRef.current = dynamicUniforms;
-  }, [dynamicUniforms]);
 
   useEffect(() => {
     try {
@@ -445,7 +437,6 @@ const App: React.FC = () => {
       <div className="flex gap-4 items-start">
         <ControlPanel
           onCreateClick={handleCreateClick}
-          onCancelClick={handleCancelClick}
           onAdvancedEditorClick={() => setOpenModal("shader")}
           onPresetsClick={() => setOpenModal("presets")}
           onSaveShader={() => setOpenModal("save")}

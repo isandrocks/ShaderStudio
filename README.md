@@ -10,8 +10,10 @@ A Figma plugin that creates dynamic backgrounds, textures, and animated fills us
 ## Features
 
 ✨ **Real-time Shader Preview** - See your GLSL shaders render live with WebGL  
-🎨 **Dynamic Uniforms** - Create custom parameters with sliders on the fly  
-📝 **Advanced Code Editor** - Edit shaders with syntax highlighting (Ace Editor)  
+🎨 **Dynamic Uniforms** - Create float sliders and vec3/vec4 color pickers on the fly  
+📝 **Advanced Code Editor** - Edit shaders with GLSL syntax highlighting (Ace Editor)  
+🎭 **Preset Library** - Browse and load curated shader presets by category  
+💾 **Save & Load Shaders** - Persistent shader storage in Figma documents  
 ⏸️ **Animation Controls** - Pause/play shader animations  
 🔧 **Zero Configuration** - No GLSL knowledge required to start  
 📦 **Export to Figma** - Apply shader output as image fills to rectangles
@@ -66,12 +68,35 @@ Then in Figma:
 ### Adding Custom Uniforms
 
 1. Click the **+** button in the Parameters panel
-2. Configure uniform properties:
+2. Choose uniform **type**:
+   - **float**: Slider control (min/max/step)
+   - **color (RGB/RGBA)**: vec3/vec4 color picker with alpha
+3. Configure properties:
    - **Name**: GLSL identifier (e.g., `uMyParam`)
-   - **Min/Max**: Value range
-   - **Step**: Increment size
-   - **Initial Value**: Starting value
-3. Click **Create** - uniform auto-injected into shader
+   - **Min/Max/Step**: Value range (float only)
+   - **Initial Value**: Starting value or color
+4. Click **Add** - uniform auto-injected into shader
+
+### Saving & Loading Shaders
+
+**Save a shader:**
+1. Click **💾 Save** button in Parameters panel
+2. Enter name and optional description
+3. Optionally include thumbnail (auto-captured from canvas)
+4. Shader saved to Figma document storage
+
+**Load a saved shader:**
+1. Click **Advanced Editor ▼** → **My Shaders**
+2. Browse saved shaders (sort by name/newest/oldest)
+3. Click card to load shader with all uniforms
+4. Delete unwanted shaders with **×** button
+
+### Using Preset Shaders
+
+1. Click **Advanced Editor ▼** → **Presets**
+2. Filter by category: All / Waves / Noise / Patterns / Effects
+3. Click preset card to load shader
+4. Modify uniforms and shader code as needed
 
 ### Editing Shader Code
 
@@ -82,12 +107,36 @@ Then in Figma:
 
 ## Architecture
 
-This plugin uses a **two-process architecture**:
+This plugin uses a **two-process architecture** with **React 19.2** and **Tailwind CSS v4**:
 
 - **Plugin Sandbox** (`src/plugin/controller.ts`): Figma API access, runs in restricted environment
 - **UI Iframe** (`src/app/`): React app with WebGL rendering, runs in browser context
 
 Communication via `postMessage` between contexts.
+
+### State Management
+
+- **React Hooks**: `useState` for UI state, `useRef` for WebGL context
+- **useSyncedRef Hook**: Custom hook to keep refs in sync with state (solves closure issues in animation loops)
+- **Dynamic Uniforms**: Array of configurable uniforms with CRUD operations
+- **Shader Storage**: Saved to Figma document via `figma.root.getPluginData()` / `setPluginData()`
+
+### Key Technical Patterns
+
+**Ref Synchronization Pattern:**
+```tsx
+const paramsRef = useSyncedRef(params); // Always has current value
+// Animation loop reads from paramsRef.current
+```
+
+**Dynamic Uniform Injection:**
+- Uniforms auto-declared in shader via `buildFragmentSource()`
+- Inserted after `precision mediump float;` statement
+- Supports `float`, `vec3`, `vec4` types
+
+**Message Protocol:**
+- `create-rectangle` → `render-shader` → `shader-rendered` → Apply image fill
+- `save-shader` / `load-shaders` / `delete-shader` for storage operations
 
 ### Tech Stack
 
@@ -103,21 +152,41 @@ Communication via `postMessage` between contexts.
 ```
 src/
 ├── app/
-│   ├── components/         # React components
-│   │   ├── ControlPanel.tsx
-│   │   ├── ShaderCanvas.tsx
-│   │   ├── ShaderModal.tsx
-│   │   ├── SliderControl.tsx
-│   │   ├── UniformConfigModal.tsx
-│   │   ├── PlusIcon.tsx
-│   │   └── DeleteIcon.tsx
-│   ├── App.tsx             # Main component
-│   ├── webgl.ts            # WebGL rendering logic
-│   ├── shaders.ts          # GLSL shader source
-│   ├── styles.css          # Tailwind CSS
-│   └── index.tsx           # React entry point
+│   ├── components/           # React components
+│   │   ├── ControlPanel.tsx      # Dynamic uniform controls sidebar
+│   │   ├── ShaderCanvas.tsx      # WebGL canvas with pause/play
+│   │   ├── ShaderModal.tsx       # Advanced editor (Ace Editor)
+│   │   ├── SliderControl.tsx     # Reusable slider with delete
+│   │   ├── ColorControl.tsx      # vec3/vec4 color picker
+│   │   ├── UniformConfigModal.tsx # Add new uniform dialog
+│   │   ├── BaseModal.tsx         # Reusable modal wrapper
+│   │   ├── PresetGallery.tsx     # Preset shader browser
+│   │   ├── PresetCard.tsx        # Individual preset card
+│   │   ├── SaveShaderModal.tsx   # Save shader dialog
+│   │   ├── SavedShadersGallery.tsx # Saved shader browser
+│   │   ├── SaveIcon.tsx          # Save button icon
+│   │   ├── PlusIcon.tsx          # Add button icon
+│   │   └── DeleteIcon.tsx        # Delete button icon
+│   ├── hooks/                # Custom React hooks
+│   │   └── useSyncedRef.ts       # Keep ref in sync with state
+│   ├── generated/            # Auto-generated files
+│   │   ├── preset-thumbnails.ts  # Preset thumbnail data
+│   │   └── preset-thumbnails.json # Thumbnail source
+│   ├── App.tsx               # Main React component
+│   ├── webgl.ts              # WebGL/shader rendering logic
+│   ├── shaders.ts            # GLSL shader source constants
+│   ├── presets.ts            # Preset shader definitions
+│   ├── types.ts              # TypeScript type definitions
+│   ├── constants.ts          # App-wide constants
+│   ├── styles.css            # Tailwind CSS v4 with theme
+│   ├── index.tsx             # React entry point
+│   └── index.html            # HTML template
 └── plugin/
-    └── controller.ts       # Figma plugin controller
+    └── controller.ts         # Figma plugin controller
+
+dist/                         # Build output (auto-generated)
+├── code.js                   # Compiled plugin (~4 KB)
+└── ui.html                   # Compiled UI with inlined JS (~1.5 MB)
 ```
 
 ## Scripts
@@ -155,9 +224,36 @@ void main() {
 
 - `initWebGL()` - Initialize WebGL context and compile shaders
 - `buildFragmentSource()` - Inject dynamic uniforms into shader source
-- `renderShader()` - Render single frame with current uniform values
+- `injectUniforms()` - Low-level uniform injection (base uniforms excluded)
+- `stripInjectedUniforms()` - Remove auto-injected uniforms from code
+- `renderShader()` - Render single frame with current uniform values (supports float/vec3/vec4)
 - `recompileShader()` - Hot-reload shader with new code
 - `captureShaderAsImage()` - Capture canvas as PNG for Figma
+
+### Type System (types.ts)
+
+```typescript
+type UniformType = "float" | "vec3" | "vec4";
+type UniformValue = number | [number, number, number] | [number, number, number, number];
+
+interface DynamicUniform {
+  id: string;
+  name: string;
+  type: UniformType;
+  value: UniformValue;
+  min: number;
+  max: number;
+  step: number;
+}
+```
+
+### Custom Hooks (hooks/)
+
+**useSyncedRef** - Keep ref in sync with state value:
+```tsx
+const countRef = useSyncedRef(count);
+// countRef.current always has latest count, even in callbacks
+```
 
 ## Figma Plugin API
 
@@ -210,14 +306,28 @@ Run `npm run build:watch` and reload plugin after each compile.
 - Inline source maps enabled in development builds
 
 ### Bundle Size
-- Current: **~839 KB** (includes React + Tailwind + Ace Editor)
+- Current: **~1.5 MB** (includes React + Tailwind + Ace Editor + react-colorful)
+- Plugin code: **~4 KB** (controller only)
 - Performance warnings disabled in `webpack.config.js`
 
-## Roadmap
+**Recent Refactorings (November 2025):**
+- ✅ Replaced manual ref syncing with `useSyncedRef` custom hook
+- ✅ Consolidated uniform type defaulting with `ensureUniformTypes()` helper
+- ✅ Removed redundant `buildFragmentSource()` logic - now uses `injectUniforms()`
+- ✅ Cleaned up commented/mothballed code from ControlPanel
+- ✅ Improved documentation and simplified error handling
 
-See [ROADMAP.md](./ROADMAP.md) for planned features:
+## Code Quality
 
-- 🎨 Multi-type uniforms (vec3/vec4 color pickers)
+See [ROADMAP.md](./ROADMAP.md) for detailed plans. Recently completed:
+
+✅ **Multi-type uniforms** - vec3/vec4 color pickers with RGB/RGBA support  
+✅ **Preset library** - Curated shaders organized by category  
+✅ **Save/load shaders** - Persistent storage in Figma documents  
+✅ **Thumbnail generation** - Auto-capture shader previews
+
+Planned features:
+
 - 🖼️ Texture support (sampler2D uniforms)
 - 🎵 Audio reactivity
 - 🤖 AI shader generation

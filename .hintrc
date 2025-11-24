@@ -8,6 +8,15 @@
       {
         "aria-valid-attr-value": "off"
       }
-    ]
-  }
+    ],
+    "no-inline-styles": "off"
+  },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not chrome <= 112",
+    "not ios_saf <= 18.6",
+    "not safari <= 18.6",
+    "not samsung <= 28"
+  ]
 }

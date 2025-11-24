@@ -1,5 +1,7 @@
 # GLSL Texture & Shaders Figma Plugin
 
+> **Recent Refactorings (November 2025):** Codebase has been optimized to remove redundancies, simplify complex patterns, and improve maintainability. Key changes: replaced manual ref syncing with `useSyncedRef` hook, consolidated duplicate uniform injection logic, removed unused/commented code, and improved type safety.
+
 ## Architecture Overview
 
 This is a Figma plugin that renders GLSL shaders in WebGL and applies them as image fills to rectangles. The plugin uses a **two-process architecture** with a **React + Tailwind CSS v4** frontend:
@@ -50,24 +52,38 @@ The UI follows a modular component structure:
 App.tsx (Main Component)
 ├── ControlPanel (Left sidebar with dynamic uniform controls)
 │   ├── PlusIcon (Add new uniform button)
-│   └── SliderControl × N (Dynamic uniforms with delete buttons)
+│   ├── SliderControl × N (Float uniforms with delete buttons)
+│   ├── ColorControl × N (vec3/vec4 color pickers with delete buttons)
+│   └── SaveIcon (Save shader button)
 ├── ShaderCanvas (WebGL canvas with pause/play toggle)
 ├── ShaderModal (Advanced shader editor with Ace Editor)
-└── UniformConfigModal (Configure new uniform properties)
+├── UniformConfigModal (Configure new uniform properties - float or color)
+├── PresetGallery (Browse preset shaders by category)
+├── SaveShaderModal (Save shader with name/description/thumbnail)
+└── SavedShadersGallery (Browse, load, and delete saved shaders)
 ```
 
 **State Management:**
 - `useState` for UI state (params, modal visibility, shader code, errors)
 - `useRef` for WebGL state (gl context, program, uniforms, animation frame)
-- `paramsRef` pattern to solve closure issues in animation loops (refs always have current values)
+- `useSyncedRef` hook for params and dynamicUniforms (keeps refs in sync with state)
+- `ensureUniformTypes()` helper for backward compatibility
 
 **Key Hook Pattern:**
 ```tsx
-const paramsRef = useRef(params);
-useEffect(() => {
-  paramsRef.current = params; // Keep ref in sync
-}, [params]);
-// Animation loop reads from paramsRef.current to get latest values
+import { useSyncedRef } from "./hooks/useSyncedRef";
+
+const paramsRef = useSyncedRef(params); // Automatically synced
+const dynamicUniformsRef = useSyncedRef(dynamicUniforms);
+
+// Animation loop reads from refs - always has current values
+const renderLoop = () => {
+  renderShader(canvas, shaderState, {
+    ...paramsRef.current,
+    dynamicUniforms: dynamicUniformsRef.current
+  }, getCurrentTime());
+  requestAnimationFrame(renderLoop);
+};
 ```
 
 ### Shader Rendering Pipeline
@@ -143,16 +159,24 @@ dist/                            # Build output (auto-generated, git-ignored)
   - Animation loop management (`renderLoop`)
   - Canvas capture for Figma (`captureShader`)
   - Event handlers for all user interactions
-  - Refs for WebGL state, params, and dynamic uniforms
+  - Uses `useSyncedRef` hook for params and dynamicUniforms (solves closure issues)
+  - `ensureUniformTypes()` helper for backward compatibility (defaults type to 'float')
 
-- **`src/app/webgl.ts`**: Extracted WebGL logic containing:
+- **`src/app/webgl.ts`**: WebGL logic containing:
   - `initWebGL()`: Initialize WebGL context, compile shaders, set up uniforms
-  - `buildFragmentSource()`: Auto-inject dynamic uniform declarations after precision statement
+  - `buildFragmentSource()`: Simplified - now delegates to `injectUniforms()`
+  - `injectUniforms()`: Auto-inject dynamic uniform declarations after precision statement
+  - `stripInjectedUniforms()`: Remove auto-injected uniforms (excludes base uniforms)
   - `createShader()`: Compile vertex/fragment shaders with error handling
   - `recompileShader()`: Hot-reload shader code with new uniforms
-  - `renderShader()`: Render frame with all uniform values
+  - `renderShader()`: Render frame with all uniform values (supports float/vec3/vec4)
   - `captureShaderAsImage()`: Capture canvas as PNG for Figma
-  - `DynamicUniform` interface: id, name, value, min, max, step
+  - `DynamicUniform` interface: id, name, type, value, min, max, step
+
+- **`src/app/hooks/useSyncedRef.ts`**: Custom hook to keep ref in sync with state
+  - Solves closure issues in animation loops
+  - Used for `paramsRef` and `dynamicUniformsRef` in App.tsx
+  - Ensures refs always have current values in requestAnimationFrame callbacks
 
 - **`src/app/components/ControlPanel.tsx`**: Dynamic uniform controls container:
   - Renders all uniforms from `dynamicUniforms` array
@@ -252,9 +276,13 @@ No `autoprefixer` needed (built into Tailwind v4).
 - **Source maps**: Must use `inline-source-map` in development due to Figma's sandbox eval limitations
 
 ### React-Specific
-- **Animation loop closures**: Use `useRef` + `useEffect` pattern to keep refs in sync with state for `requestAnimationFrame` loops
+- **Animation loop closures**: Use `useSyncedRef` hook to keep refs in sync with state for `requestAnimationFrame` loops
+  - Import from `./hooks/useSyncedRef`
+  - Pattern: `const paramsRef = useSyncedRef(params);`
+  - No manual `useEffect` syncing needed
 - **Canvas ref forwarding**: ShaderCanvas forwards ref to App.tsx for WebGL context access
-- **Modal state**: Controlled via `isModalOpen` state in App.tsx, passed as prop to ShaderModal
+- **Modal state**: Controlled via `isModalOpen` state in App.tsx, passed as prop to modals
+- **Backward compatibility**: All uniforms default type to 'float' via `ensureUniformTypes()` helper
 
 ### Tailwind CSS v4
 - **No config file**: Configuration is CSS-based via `@theme` directive
