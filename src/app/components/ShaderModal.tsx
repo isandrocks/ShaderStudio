@@ -136,10 +136,10 @@ const ShaderModal: React.FC<ShaderModalProps> = ({
             onClick={onReset}
             className="flex-1 px-4 py-2.5 text-[13px] font-medium font-inherit
               border-none rounded-md cursor-pointer transition-all duration-150
-              outline-none bg-[#2c2c2c] text-white border border-[#3c3c3c]
-              hover:bg-[#333333] active:bg-[#2a2a2a] active:scale-[0.98]"
+              outline-none bg-[#3c3c3c] text-white border border-[#4c4c4c]
+              hover:bg-[#454545] hover:border-[#5c5c5c] active:bg-[#2a2a2a] active:scale-[0.98]"
           >
-            Reset to Default
+            Discard Changes
           </button>
           <button
             onClick={onApply}

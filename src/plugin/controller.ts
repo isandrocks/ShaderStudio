@@ -83,6 +83,16 @@ figma.ui.onmessage = async (msg: {
 }) => {
   try {
     switch (msg.type) {
+      case "apply-to-selection": {
+        applyToSelection();
+        break;
+      }
+
+      case "get-selection-dimensions": {
+        getSelectionDimensions();
+        break;
+      }
+
       case "create-rectangle": {
         createRectangle();
         break;
@@ -157,6 +167,136 @@ figma.ui.onmessage = async (msg: {
   }
 };
 
+function getSelectionDimensions() {
+  try {
+    const selection = figma.currentPage.selection;
+
+    if (selection.length === 0) {
+      // No selection - return default dimensions
+      figma.ui.postMessage({ 
+        type: "selection-dimensions",
+        width: null,
+        height: null
+      });
+      return;
+    }
+
+    if (selection.length === 1) {
+      const node = selection[0];
+      
+      // Check if node has dimensions
+      if ("width" in node && "height" in node) {
+        const width = Math.round(node.width);
+        const height = Math.round(node.height);
+        
+        figma.ui.postMessage({ 
+          type: "selection-dimensions",
+          width,
+          height
+        });
+      } else {
+        // Node doesn't have dimensions, use default
+        figma.ui.postMessage({ 
+          type: "selection-dimensions",
+          width: null,
+          height: null
+        });
+      }
+    } else {
+      // Multiple selection - use default
+      figma.ui.postMessage({ 
+        type: "selection-dimensions",
+        width: null,
+        height: null
+      });
+    }
+  } catch (error) {
+    console.error("[getSelectionDimensions] Error:", error);
+    figma.ui.postMessage({ 
+      type: "selection-dimensions",
+      width: null,
+      height: null
+    });
+  }
+}
+
+function applyToSelection() {
+  try {
+    const selection = figma.currentPage.selection;
+
+    if (selection.length === 0) {
+      figma.ui.postMessage({
+        type: "selection-error",
+        error: "Please select an object first",
+      });
+      return;
+    }
+
+    if (selection.length > 1) {
+      figma.ui.postMessage({
+        type: "selection-error",
+        error: "Please select only one object",
+      });
+      return;
+    }
+
+    const node = selection[0];
+
+    // Check if the node supports fills
+    if (!("fills" in node)) {
+      figma.ui.postMessage({
+        type: "selection-error",
+        error: "Selected object doesn't support fills",
+      });
+      return;
+    }
+
+    // Store selected node as current rectangle
+    currentRect = node as RectangleNode;
+    
+    // Get node dimensions for high-quality rendering
+    const width = Math.round(currentRect.width);
+    const height = Math.round(currentRect.height);
+    
+    // First, send selection info to show aspect ratio overlay
+    figma.ui.postMessage({ 
+      type: "selection-info",
+      width,
+      height
+    });
+    
+    // Wait a moment for user to see the overlay, then render
+    setTimeout(() => {
+      figma.ui.postMessage({ 
+        type: "render-shader",
+        width,
+        height
+      });
+    }, 800); // 800ms delay to show overlay
+
+    // Timeout fallback
+    setTimeout(() => {
+      if (
+        currentRect &&
+        (currentRect.fills as readonly Paint[])[0]?.type === "SOLID"
+      ) {
+        const timeoutError = new Error(
+          "Shader rendering timed out after 10 seconds",
+        );
+        figma.notify(timeoutError.message, { error: true, timeout: 5000 });
+        throw timeoutError;
+      }
+    }, 10000);
+  } catch (error) {
+    console.error("[applyToSelection] Error:", error);
+    figma.notify(`Failed to apply to selection: ${error}`, {
+      error: true,
+      timeout: 5000,
+    });
+    throw error;
+  }
+}
+
 function createRectangle() {
   try {
     const rect = figma.createRectangle();
@@ -168,7 +308,11 @@ function createRectangle() {
     figma.viewport.scrollAndZoomIntoView([rect]);
 
     currentRect = rect;
-    figma.ui.postMessage({ type: "render-shader" });
+    figma.ui.postMessage({ 
+      type: "render-shader",
+      width: 512,
+      height: 512
+    });
 
     // Timeout fallback
     setTimeout(() => {

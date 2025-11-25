@@ -4,13 +4,52 @@ interface ShaderCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   isPaused: boolean;
   onPauseChange: (checked: boolean) => void;
+  showAspectRatio?: boolean;
+  aspectWidth?: number;
+  aspectHeight?: number;
+  onToggleOverlay?: () => void;
 }
 
 const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
   canvasRef,
   isPaused,
   onPauseChange,
+  showAspectRatio = false,
+  aspectWidth = 512,
+  aspectHeight = 512,
+  onToggleOverlay,
 }) => {
+  const [manualOverlay, setManualOverlay] = React.useState(false);
+  
+  const handleOverlayToggle = () => {
+    // Request dimensions from parent first
+    if (onToggleOverlay) {
+      onToggleOverlay();
+    }
+    // Then toggle the overlay
+    setManualOverlay(!manualOverlay);
+  };
+  
+  // Show overlay if either showAspectRatio prop is true OR manual toggle is on
+  const displayOverlay = showAspectRatio || manualOverlay;
+  
+  // Calculate overlay dimensions to fit within 512x512 canvas
+  const canvasSize = 512;
+  const aspectRatio = aspectWidth / aspectHeight;
+  
+  let overlayWidth, overlayHeight;
+  if (aspectRatio > 1) {
+    // Wider than tall
+    overlayWidth = canvasSize;
+    overlayHeight = canvasSize / aspectRatio;
+  } else {
+    // Taller than wide or square
+    overlayHeight = canvasSize;
+    overlayWidth = canvasSize * aspectRatio;
+  }
+  
+  const overlayLeft = (canvasSize - overlayWidth) / 2;
+  const overlayTop = (canvasSize - overlayHeight) / 2;
   return (
     <div
       className="w-canvas h-canvas rounded-lg overflow-hidden
@@ -26,6 +65,7 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
           onClick={() => onPauseChange(!isPaused)}
           aria-pressed={isPaused ? "true" : "false"}
           aria-label={isPaused ? "Resume animation" : "Pause animation"}
+          title={isPaused ? "Resume animation" : "Pause animation"}
           className="flex items-center
             font-['Liberation_Sans','Inter',sans-serif] text-xs
             text-[rgba(179,179,179,0.75)] font-medium pointer-events-auto m-0
@@ -34,7 +74,47 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
         >
           <span className="text-sm select-none">{isPaused ? "⏸︎" : "⏵︎"}</span>
         </button>
+        
+        <button
+          type="button"
+          onClick={handleOverlayToggle}
+          aria-pressed={manualOverlay ? "true" : "false"}
+          aria-label={manualOverlay ? "Hide aspect ratio" : "Show aspect ratio"}
+          title={manualOverlay ? "Hide aspect ratio overlay" : "Show aspect ratio overlay"}
+          className="flex items-center ml-2
+            font-['Liberation_Sans','Inter',sans-serif] text-xs
+            text-[rgba(179,179,179,0.75)] font-medium pointer-events-auto m-0
+            gap-2 px-2 py-1 rounded-md bg-[rgba(0,0,0,0.35)] backdrop-blur-sm
+            transition-colors duration-150 hover:text-white active:scale-[0.97]"
+        >
+          <span className="text-sm select-none">{manualOverlay ? "◰" : "◱"}</span>
+        </button>
       </div>
+      
+      {/* Aspect Ratio Overlay */}
+      {displayOverlay && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: `${overlayLeft}px`,
+            top: `${overlayTop}px`,
+            width: `${overlayWidth}px`,
+            height: `${overlayHeight}px`,
+            border: '2px dashed rgba(13, 153, 255, 0.8)',
+            backgroundColor: 'rgba(13, 153, 255, 0.05)',
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.4)',
+          }}
+        >
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+              bg-[rgba(13,153,255,0.9)] text-white px-2 py-1 rounded text-xs
+              font-medium whitespace-nowrap"
+          >
+            {aspectWidth} × {aspectHeight}px
+          </div>
+        </div>
+      )}
+      
       <canvas
         ref={canvasRef}
         id="glCanvas"

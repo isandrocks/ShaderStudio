@@ -48,7 +48,11 @@ const App: React.FC = () => {
     SHADER_PRESETS[0].fragmentShader,
   );
   const [shaderError, setShaderError] = useState("");
+  const [selectionError, setSelectionError] = useState("");
   const [criticalError, setCriticalError] = useState<string | null>(null);
+  const [renderWidth, setRenderWidth] = useState(512);
+  const [renderHeight, setRenderHeight] = useState(512);
+  const [showAspectRatio, setShowAspectRatio] = useState(false);
   const [dynamicUniforms, setDynamicUniforms] = useState<DynamicUniform[]>(
     SHADER_PRESETS[0].defaultUniforms,
   );
@@ -62,6 +66,7 @@ const App: React.FC = () => {
   const startTimeRef = useRef(Date.now());
   const animationFrameRef = useRef<number | undefined>(undefined);
   const customFragmentShaderRef = useRef<string | null>(null);
+  const modalShaderSnapshotRef = useRef<string | null>(null);
   const paramsRef = useSyncedRef(params);
   const dynamicUniformsRef = useSyncedRef(dynamicUniforms);
 
@@ -103,12 +108,54 @@ const App: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Temporarily resize canvas for high-quality capture
+    const originalWidth = canvas.width;
+    const originalHeight = canvas.height;
+    
+    // Supersample for better quality - render at 2x-4x target size
+    const SUPERSAMPLE_MULTIPLIER = 3; // Render at 3x for excellent quality
+    const MAX_RENDER_SIZE = 4096;
+    
+    // Calculate target render size with supersampling
+    let captureWidth = renderWidth * SUPERSAMPLE_MULTIPLIER;
+    let captureHeight = renderHeight * SUPERSAMPLE_MULTIPLIER;
+    
+    // Cap at maximum to prevent performance issues
+    const maxDimension = Math.max(captureWidth, captureHeight);
+    if (maxDimension > MAX_RENDER_SIZE) {
+      const scale = MAX_RENDER_SIZE / maxDimension;
+      captureWidth = Math.round(captureWidth * scale);
+      captureHeight = Math.round(captureHeight * scale);
+    }
+    
+    // Ensure minimum quality for small objects
+    if (captureWidth < 512) captureWidth = 512;
+    if (captureHeight < 512) captureHeight = 512;
+    
+    console.log(`[captureShader] Target: ${renderWidth}x${renderHeight}, Rendering: ${captureWidth}x${captureHeight} (${SUPERSAMPLE_MULTIPLIER}x supersampling)`);
+    
+    canvas.width = captureWidth;
+    canvas.height = captureHeight;
+
+    // Update WebGL viewport to match new canvas size
+    const gl = shaderStateRef.current.gl;
+    if (gl) {
+      gl.viewport(0, 0, captureWidth, captureHeight);
+    }
+
     captureShaderAsImage(
       canvas,
       shaderStateRef.current,
       { ...paramsRef.current, dynamicUniforms: dynamicUniformsRef.current },
       getCurrentTime(),
       (imageData) => {
+        // Restore original canvas size and viewport
+        canvas.width = originalWidth;
+        canvas.height = originalHeight;
+        if (gl) {
+          gl.viewport(0, 0, originalWidth, originalHeight);
+        }
+        
         parent.postMessage(
           {
             pluginMessage: {
@@ -281,8 +328,20 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCreateClick = () => {
+  const handleApplyToSelection = () => {
+    setSelectionError("");
+    setShowAspectRatio(false);
+    parent.postMessage({ pluginMessage: { type: "apply-to-selection" } }, "*");
+  };
+
+  const handleCreateRectangle = () => {
+    setSelectionError("");
     parent.postMessage({ pluginMessage: { type: "create-rectangle" } }, "*");
+  };
+
+  const handleToggleOverlay = () => {
+    // Request current selection dimensions from Figma
+    parent.postMessage({ pluginMessage: { type: "get-selection-dimensions" } }, "*");
   };
 
   const handleApplyShader = () => {
@@ -304,10 +363,14 @@ const App: React.FC = () => {
   };
 
   const handleResetShader = () => {
-    const defaultShader = SHADER_PRESETS[0].fragmentShader;
-    setShaderCode(defaultShader);
-    customFragmentShaderRef.current = null;
-    handleRecompileShader(defaultShader);
+    // Reset to the shader state when modal was opened, or default preset if no snapshot
+    const resetShader = modalShaderSnapshotRef.current || SHADER_PRESETS[0].fragmentShader;
+    setShaderCode(resetShader);
+    // Only clear custom ref if resetting to default preset
+    if (!modalShaderSnapshotRef.current) {
+      customFragmentShaderRef.current = null;
+    }
+    handleRecompileShader(stripInjectedUniforms(resetShader, dynamicUniforms));
   };
 
   useEffect(() => {
@@ -338,8 +401,39 @@ const App: React.FC = () => {
           if (!msg) return;
 
           switch (msg.type) {
+            case "selection-info":
+              // Show aspect ratio overlay for selected object
+              if (msg.width && msg.height) {
+                setRenderWidth(msg.width);
+                setRenderHeight(msg.height);
+                setShowAspectRatio(true);
+              }
+              break;
+
+            case "selection-dimensions":
+              // Update dimensions for overlay toggle (doesn't auto-show)
+              if (msg.width && msg.height) {
+                setRenderWidth(msg.width);
+                setRenderHeight(msg.height);
+              } else {
+                // Default to 512x512 if no selection
+                setRenderWidth(512);
+                setRenderHeight(512);
+              }
+              break;
+
             case "render-shader":
+              // Update render dimensions if provided
+              if (msg.width && msg.height) {
+                setRenderWidth(msg.width);
+                setRenderHeight(msg.height);
+              }
+              setShowAspectRatio(false);
               captureShader();
+              break;
+
+            case "selection-error":
+              setSelectionError(msg.error || "Selection error");
               break;
 
             case "shaders-loaded":
@@ -436,8 +530,14 @@ const App: React.FC = () => {
 
       <div className="flex gap-4 items-start">
         <ControlPanel
-          onCreateClick={handleCreateClick}
-          onAdvancedEditorClick={() => setOpenModal("shader")}
+          onApplyToSelection={handleApplyToSelection}
+          onCreateRectangle={handleCreateRectangle}
+          selectionError={selectionError}
+          onAdvancedEditorClick={() => {
+            // Capture current shader state as snapshot for reset
+            modalShaderSnapshotRef.current = shaderCode;
+            setOpenModal("shader");
+          }}
           onPresetsClick={() => setOpenModal("presets")}
           onSaveShader={() => setOpenModal("save")}
           onOpenSavedShaders={() => setOpenModal("saved-shaders")}
@@ -451,6 +551,10 @@ const App: React.FC = () => {
           canvasRef={canvasRef}
           isPaused={params.paused}
           onPauseChange={handlePauseChange}
+          showAspectRatio={showAspectRatio}
+          aspectWidth={renderWidth}
+          aspectHeight={renderHeight}
+          onToggleOverlay={handleToggleOverlay}
         />
       </div>
 
@@ -462,7 +566,10 @@ const App: React.FC = () => {
         isOpen={openModal === "shader"}
         shaderCode={shaderCode}
         error={shaderError}
-        onClose={() => setOpenModal("none")}
+        onClose={() => {
+          modalShaderSnapshotRef.current = null;
+          setOpenModal("none");
+        }}
         onShaderChange={setShaderCode}
         onApply={handleApplyShader}
         onReset={handleResetShader}
