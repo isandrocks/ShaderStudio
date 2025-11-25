@@ -8,6 +8,7 @@ import EditIcon from "./EditIcon";
 import PaletteIcon from "./PaletteIcon";
 import FolderIcon from "./FolderIcon";
 import RectangleIcon from "./RectangleIcon";
+import VideoIcon from "./VideoIcon";
 import type { DynamicUniform, UniformValue } from "../types";
 
 interface ControlPanelProps {
@@ -18,6 +19,7 @@ interface ControlPanelProps {
   onPresetsClick: () => void;
   onSaveShader: () => void;
   onOpenSavedShaders: () => void;
+  onExportVideo: () => void;
   dynamicUniforms: DynamicUniform[];
   onAddUniform: () => void;
   onUpdateUniform: (id: string, value: UniformValue) => void;
@@ -32,6 +34,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onPresetsClick,
   onSaveShader,
   onOpenSavedShaders,
+  onExportVideo,
   dynamicUniforms,
   onAddUniform,
   onUpdateUniform,
@@ -168,6 +171,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 >
                   <RectangleIcon className="w-3.5 h-3.5" />
                   <span>Create New Rectangle</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsApplyDropdownOpen(false);
+                    onExportVideo();
+                  }}
+                  className="w-full h-7 px-3 text-xs font-medium text-left
+                    bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
+                    duration-150 outline-none border-none hover:bg-[#454545]
+                    flex items-center gap-2"
+                >
+                  <VideoIcon className="w-3.5 h-3.5" />
+                  <span>Export Video</span>
                 </button>
               </div>
             )}

@@ -77,6 +77,7 @@ async function saveShadersToDocument(shaders: SavedShader[]): Promise<void> {
 figma.ui.onmessage = async (msg: {
   type: string;
   imageData?: Uint8Array;
+  videoData?: Uint8Array;
   error?: string;
   shader?: SavedShader;
   id?: string;
@@ -100,6 +101,11 @@ figma.ui.onmessage = async (msg: {
 
       case "shader-rendered": {
         applyShaderToRectangle(msg.imageData!);
+        break;
+      }
+
+      case "video-rendered": {
+        await applyVideoToSelection(msg.videoData!);
         break;
       }
 
@@ -294,6 +300,54 @@ function applyToSelection() {
       timeout: 5000,
     });
     throw error;
+  }
+}
+
+async function applyVideoToSelection(videoData: Uint8Array) {
+  try {
+    const selection = figma.currentPage.selection;
+
+    if (selection.length === 0) {
+      figma.notify("Please select an object first", { error: true });
+      return;
+    }
+
+    if (selection.length > 1) {
+      figma.notify("Please select only one object", { error: true });
+      return;
+    }
+
+    const node = selection[0];
+
+    // Check if the node supports fills
+    if (!("fills" in node)) {
+      figma.notify("Selected object doesn't support fills", { error: true });
+      return;
+    }
+
+    // Create video from bytes
+    const video = await figma.createVideoAsync(videoData);
+
+    // Apply video fill to the node
+    node.fills = [{
+      type: "VIDEO",
+      videoHash: video.hash,
+      scaleMode: "FILL"
+    }];
+
+    figma.notify("✓ Video applied successfully!");
+  } catch (error) {
+    console.error("[applyVideoToSelection] Error:", error);
+    const errorMessage = (error as Error).message || "Unknown error";
+    
+    // Handle common errors
+    if (errorMessage.includes("paid")) {
+      figma.notify("Video uploads require a paid Figma plan", { error: true, timeout: 5000 });
+    } else if (errorMessage.includes("100MB")) {
+      figma.notify("Video file must be less than 100MB", { error: true });
+    } else {
+      figma.notify(`Failed to apply video: ${errorMessage}`, { error: true });
+    }
   }
 }
 

@@ -6,6 +6,7 @@ import UniformConfigModal from "./components/UniformConfigModal";
 import { PresetGallery } from "./components/PresetGallery";
 import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
+import VideoExportModal from "./components/VideoExportModal";
 import { ShaderPreset, SHADER_PRESETS } from "./presets";
 import { useSyncedRef } from "./hooks/useSyncedRef";
 import type {
@@ -43,6 +44,8 @@ const App: React.FC = () => {
     pausedTime: 0.0,
   });
   const [openModal, setOpenModal] = useState<ModalType>("none");
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isExportingVideo, setIsExportingVideo] = useState(false);
   const [savedShaders, setSavedShaders] = useState<SavedShader[]>([]);
   const [shaderCode, setShaderCode] = useState(
     SHADER_PRESETS[0].fragmentShader,
@@ -312,6 +315,158 @@ const App: React.FC = () => {
     parent.postMessage({ pluginMessage: { type: "delete-shader", id } }, "*");
   };
 
+  const handleExportVideo = async (duration: number, playbackMode: "normal" | "bounce", fps: number) => {
+    console.log("[handleExportVideo] Starting video export:", { duration, playbackMode, fps });
+    setIsExportingVideo(true);
+    try {
+      // Fixed 1080x1080 resolution
+      const resolution = 1080;
+      
+      // Create off-screen canvas at square resolution
+      const offscreenCanvas = document.createElement('canvas');
+      offscreenCanvas.width = resolution;
+      offscreenCanvas.height = resolution;
+
+      // Initialize WebGL context for off-screen canvas
+      const offscreenStateRef = { current: { gl: null, program: null, uniforms: {}, dynamicUniforms: {} } as ShaderState };
+      const shaderToUse = customFragmentShaderRef.current || buildFragmentSource(shaderCode, dynamicUniformsRef.current);
+      const initialized = initWebGL(
+        offscreenCanvas,
+        offscreenStateRef,
+        shaderToUse,
+        (error) => {
+          if (error) throw new Error(error);
+        }
+      );
+
+      if (!initialized || !offscreenStateRef.current.gl) {
+        throw new Error("Failed to initialize off-screen WebGL context");
+      }
+
+      console.log(`[handleExportVideo] Recording ${duration}s video at ${fps} fps, 1080×1080`);
+
+      // Calculate total frames needed
+      const totalFrames = duration * fps;
+
+      // Create a 2D canvas for encoding
+      const encodeCanvas = document.createElement('canvas');
+      encodeCanvas.width = 1080;
+      encodeCanvas.height = 1080;
+      const encodeCtx = encodeCanvas.getContext('2d');
+      if (!encodeCtx) throw new Error("Failed to get 2D context for encoding");
+
+      console.log("[handleExportVideo] Starting frame-by-frame recording...");
+
+      // Create video using MediaRecorder API with maximum quality settings
+      const stream = encodeCanvas.captureStream(fps); // Stream at target FPS
+      
+      // Try different codecs for better quality
+      let mimeType = 'video/webm;codecs=vp9';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm;codecs=vp8';
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 100000000 // 100 Mbps for maximum quality
+      });
+
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      // Start recording
+      mediaRecorder.start(100); // Request data every 100ms for better quality
+
+      // Render and encode frames one at a time at real-time speed
+      const frameDelay = 1000 / fps;
+      
+      for (let i = 0; i < totalFrames; i++) {
+        const time = i / fps;
+        
+        // Render frame to WebGL canvas
+        renderShader(
+          offscreenCanvas,
+          offscreenStateRef.current,
+          { 
+            paused: true,
+            pausedTime: time,
+            dynamicUniforms: dynamicUniformsRef.current 
+          },
+          time,
+        );
+        
+        // Copy from WebGL canvas to encode canvas
+        encodeCtx.drawImage(offscreenCanvas, 0, 0);
+        
+        // Wait for proper frame timing
+        await new Promise(resolve => setTimeout(resolve, frameDelay));
+      }
+
+      // Add reverse frames for bounce mode
+      if (playbackMode === "bounce") {
+        console.log("[handleExportVideo] Adding bounce frames");
+        for (let i = totalFrames - 2; i > 0; i--) {
+          const time = i / fps;
+          
+          renderShader(
+            offscreenCanvas,
+            offscreenStateRef.current,
+            { 
+              paused: true,
+              pausedTime: time,
+              dynamicUniforms: dynamicUniformsRef.current 
+            },
+            time,
+          );
+          
+          encodeCtx.drawImage(offscreenCanvas, 0, 0);
+          
+          await new Promise(resolve => setTimeout(resolve, frameDelay));
+        }
+      }
+
+      // Stop recording
+      await new Promise<void>((resolve) => {
+        mediaRecorder.onstop = () => resolve();
+        mediaRecorder.stop();
+      });
+
+      // Clean up off-screen WebGL context
+      if (offscreenStateRef.current.gl) {
+        offscreenStateRef.current.gl.getExtension('WEBGL_lose_context')?.loseContext();
+      }
+
+      // Create video blob
+      const videoBlob = new Blob(chunks, { type: 'video/webm' });
+      
+      // Check size
+      const videoSizeMB = videoBlob.size / 1024 / 1024;
+      console.log(`[handleExportVideo] Video created: ${videoBlob.size} bytes (${videoSizeMB.toFixed(2)} MB)`);
+
+      // Download directly
+      const url = URL.createObjectURL(videoBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shader-1080x1080-${fps}fps-${Date.now()}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      console.log(`[handleExportVideo] Video downloaded: ${videoSizeMB.toFixed(2)} MB`);
+      setIsVideoModalOpen(false);
+    } catch (error) {
+      console.error("[handleExportVideo] Error:", error);
+      setCriticalError(`Video export failed: ${(error as Error).message}`);
+    } finally {
+      setIsExportingVideo(false);
+    }
+  };
+
   const handlePauseChange = (checked: boolean) => {
     if (checked) {
       setParams((prev) => ({
@@ -541,6 +696,7 @@ const App: React.FC = () => {
           onPresetsClick={() => setOpenModal("presets")}
           onSaveShader={() => setOpenModal("save")}
           onOpenSavedShaders={() => setOpenModal("saved-shaders")}
+          onExportVideo={() => setIsVideoModalOpen(true)}
           dynamicUniforms={dynamicUniforms}
           onAddUniform={() => setOpenModal("config")}
           onUpdateUniform={updateUniform}
@@ -607,6 +763,23 @@ const App: React.FC = () => {
         onLoadShader={loadSavedShader}
         onDeleteShader={deleteSavedShader}
       />
+
+      <VideoExportModal
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+        onExport={handleExportVideo}
+      />
+
+      {/* Exporting Video Spinner Overlay */}
+      {isExportingVideo && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#2a2a2a] rounded-lg p-6 flex flex-col items-center gap-4 border border-[#3c3c3c]">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-gray-300 font-medium">Exporting Video...</div>
+            <div className="text-xs text-gray-500">This may take a moment</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
