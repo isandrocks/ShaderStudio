@@ -15,6 +15,7 @@ A Figma plugin that creates dynamic backgrounds, textures, and animated fills us
 🎭 **Preset Library** - Browse and load curated shader presets by category  
 💾 **Save & Load Shaders** - Persistent shader storage in Figma documents  
 ⏸️ **Animation Controls** - Pause/play shader animations  
+🎬 **Video Export** - Export shaders as 1080p WebM videos (normal/bounce modes)  
 🔧 **Zero Configuration** - No GLSL knowledge required to start  
 📦 **Export to Figma** - Apply shader output as image fills to rectangles
 
@@ -114,10 +115,22 @@ This plugin uses a **two-process architecture** with **React 19.2** and **Tailwi
 
 Communication via `postMessage` between contexts.
 
+### Modular Design (November 2025 Refactoring)
+
+The codebase follows **clean separation of concerns**:
+
+- **App.tsx (294 lines)**: Pure component composition and layout - no business logic
+- **Custom Hooks** (`hooks/`): Stateful logic, lifecycle management, WebGL rendering engine
+- **Handler Factories** (`handlers/`): Business logic with dependency injection for testability
+- **Components** (`components/`): UI rendering only, including modular color picker
+- **Utilities** (`utils/`): Pure functions with no side effects
+- **File Size Guideline**: 550-line maximum enforced across all modules
+
 ### State Management
 
 - **React Hooks**: `useState` for UI state, `useRef` for WebGL context
-- **useSyncedRef Hook**: Custom hook to keep refs in sync with state (solves closure issues in animation loops)
+- **Custom Hooks**: `useShaderEngine` (WebGL rendering), `useShaderLifecycle` (effects), `useSyncedRef` (ref syncing)
+- **Handler Factories**: Dependency injection pattern for uniform CRUD, shader loading, Figma API, modals, video export
 - **Dynamic Uniforms**: Array of configurable uniforms with CRUD operations
 - **Shader Storage**: Saved to Figma document via `figma.root.getPluginData()` / `setPluginData()`
 
@@ -153,39 +166,58 @@ const paramsRef = useSyncedRef(params); // Always has current value
 src/
 ├── app/
 │   ├── components/           # React components
+│   │   ├── color-picker/         # Modular color picker (6 files)
+│   │   ├── video-export/         # Video export utilities
 │   │   ├── ControlPanel.tsx      # Dynamic uniform controls sidebar
 │   │   ├── ShaderCanvas.tsx      # WebGL canvas with pause/play
 │   │   ├── ShaderModal.tsx       # Advanced editor (Ace Editor)
 │   │   ├── SliderControl.tsx     # Reusable slider with delete
-│   │   ├── ColorControl.tsx      # vec3/vec4 color picker
+│   │   ├── ColorControl.tsx      # vec3/vec4 color picker (100 lines)
 │   │   ├── UniformConfigModal.tsx # Add new uniform dialog
 │   │   ├── BaseModal.tsx         # Reusable modal wrapper
 │   │   ├── PresetGallery.tsx     # Preset shader browser
 │   │   ├── PresetCard.tsx        # Individual preset card
 │   │   ├── SaveShaderModal.tsx   # Save shader dialog
 │   │   ├── SavedShadersGallery.tsx # Saved shader browser
-│   │   ├── SaveIcon.tsx          # Save button icon
-│   │   ├── PlusIcon.tsx          # Add button icon
-│   │   └── DeleteIcon.tsx        # Delete button icon
+│   │   ├── VideoExportModal.tsx  # Video export settings dialog
+│   │   └── [Icon components]     # Plus, Delete, Save, Edit, Video, etc.
 │   ├── hooks/                # Custom React hooks
-│   │   └── useSyncedRef.ts       # Keep ref in sync with state
+│   │   ├── useShaderEngine.ts    # WebGL rendering engine (175 lines)
+│   │   ├── useShaderLifecycle.ts # Lifecycle management (189 lines)
+│   │   ├── useSyncedRef.ts       # Ref syncing utility (30 lines)
+│   │   └── index.ts              # Hook exports
+│   ├── handlers/             # Business logic factories
+│   │   ├── uniformHandlers.ts    # Uniform CRUD (60 lines)
+│   │   ├── shaderLoadHandlers.ts # Preset/shader loading (70 lines)
+│   │   ├── figmaHandlers.ts      # Figma API (50 lines)
+│   │   ├── modalHandlers.ts      # Modal operations (50 lines)
+│   │   ├── videoExportHandler.ts # Video export (50 lines)
+│   │   └── index.ts              # Handler exports
+│   ├── utils/                # Pure utility functions
+│   │   └── shaderUtils.ts        # Shader utilities (110 lines)
 │   ├── generated/            # Auto-generated files
 │   │   ├── preset-thumbnails.ts  # Preset thumbnail data
 │   │   └── preset-thumbnails.json # Thumbnail source
-│   ├── App.tsx               # Main React component
-│   ├── webgl.ts              # WebGL/shader rendering logic
+│   ├── App.tsx               # Component composition ONLY (294 lines)
+│   ├── webgl.ts              # WebGL/shader rendering logic (240 lines)
 │   ├── shaders.ts            # GLSL shader source constants
 │   ├── presets.ts            # Preset shader definitions
 │   ├── types.ts              # TypeScript type definitions
 │   ├── constants.ts          # App-wide constants
-│   ├── styles.css            # Tailwind CSS v4 with theme
+│   ├── styles.css            # Tailwind CSS v4 with Figma dark theme
 │   ├── index.tsx             # React entry point
 │   └── index.html            # HTML template
 └── plugin/
-    └── controller.ts         # Figma plugin controller
+    └── controller.ts         # Figma plugin controller (350 lines)
+
+change logs/                  # Refactoring documentation
+├── APP_REFACTORING_2025-11.md
+├── BUILD_SYSTEM.md
+├── REACT_MIGRATION.md
+└── REFACTORING_SUMMARY.md
 
 dist/                         # Build output (auto-generated)
-├── code.js                   # Compiled plugin (~4 KB)
+├── code.js                   # Compiled plugin (~7 KB)
 └── ui.html                   # Compiled UI with inlined JS (~1.5 MB)
 ```
 
@@ -249,10 +281,45 @@ interface DynamicUniform {
 
 ### Custom Hooks (hooks/)
 
-**useSyncedRef** - Keep ref in sync with state value:
+**useShaderEngine** - WebGL rendering engine (175 lines):
+```tsx
+const { getCurrentTime, renderLoop, captureShader, handleRecompileShader } = useShaderEngine({
+  canvasRef, shaderStateRef, paramsRef, dynamicUniformsRef, customFragmentShaderRef
+});
+```
+
+**useShaderLifecycle** - Component lifecycle management (189 lines):
+- WebGL initialization on mount
+- Figma postMessage event handling
+- Shader recompilation on uniform changes
+- Cleanup on unmount
+
+**useSyncedRef** - Keep ref in sync with state value (30 lines):
 ```tsx
 const countRef = useSyncedRef(count);
 // countRef.current always has latest count, even in callbacks
+```
+
+### Handler Factories (handlers/)
+
+All handlers use **dependency injection** for testability:
+
+```tsx
+const { addUniform, updateUniform, removeUniform } = createUniformHandlers(
+  dynamicUniforms, setDynamicUniforms, setOpenModal, setCriticalError
+);
+
+const { loadPreset, loadSavedShader } = createShaderLoadHandlers(
+  setDynamicUniforms, customFragmentShaderRef, handleRecompileShader, ...
+);
+
+const { handleApplyToSelection, handleCreateRectangle } = createFigmaHandlers(
+  captureShader, pausedTimeRef, setPausedTime, params, ...
+);
+
+const { handleExportVideo } = createVideoExportHandler(
+  setIsExportingVideo, setCriticalError, captureShader, ...
+);
 ```
 
 ## Figma Plugin API
@@ -311,11 +378,14 @@ Run `npm run build:watch` and reload plugin after each compile.
 - Performance warnings disabled in `webpack.config.js`
 
 **Recent Refactorings (November 2025):**
-- ✅ Replaced manual ref syncing with `useSyncedRef` custom hook
-- ✅ Consolidated uniform type defaulting with `ensureUniformTypes()` helper
-- ✅ Removed redundant `buildFragmentSource()` logic - now uses `injectUniforms()`
-- ✅ Cleaned up commented/mothballed code from ControlPanel
-- ✅ Improved documentation and simplified error handling
+- ✅ **Major architectural refactoring**: App.tsx reduced from 640 to 294 lines (54% reduction)
+- ✅ **Modular architecture**: Extracted business logic into 7 modules (hooks + handlers)
+- ✅ **Custom hooks pattern**: useShaderEngine (175 lines), useShaderLifecycle (189 lines)
+- ✅ **Handler factories**: Dependency injection for uniform CRUD, shader loading, Figma API, modals, video export
+- ✅ **Color picker modularization**: Refactored into 6 separate files with HSV state management
+- ✅ **Video export feature**: 1080p WebM export with normal/bounce playback modes
+- ✅ **File size guideline**: 550-line maximum enforced across all modules
+- ✅ **App.tsx composition-only**: No inline functions, pure component layout
 
 ## Code Quality
 
@@ -324,15 +394,17 @@ See [ROADMAP.md](./ROADMAP.md) for detailed plans. Recently completed:
 ✅ **Multi-type uniforms** - vec3/vec4 color pickers with RGB/RGBA support  
 ✅ **Preset library** - Curated shaders organized by category  
 ✅ **Save/load shaders** - Persistent storage in Figma documents  
-✅ **Thumbnail generation** - Auto-capture shader previews
+✅ **Thumbnail generation** - Auto-capture shader previews  
+✅ **Video export** - 1080p WebM videos with normal/bounce modes  
+✅ **Modular architecture** - 54% reduction in App.tsx complexity
 
 Planned features:
 
 - 🖼️ Texture support (sampler2D uniforms)
 - 🎵 Audio reactivity
 - 🤖 AI shader generation
-- 📹 Video export (60-second loops)
 - 📤 HTML export for web embedding
+- 🎨 Gradient editor for color uniforms
 
 ## Contributing
 
