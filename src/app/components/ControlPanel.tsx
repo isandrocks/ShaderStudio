@@ -70,8 +70,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <div
-      className="w-64 bg-[#2a2a2a] rounded-sm flex flex-col border
-        border-[#3c3c3c] max-h-canvas overflow-hidden"
+      className="w-64 bg-[#2c2c2c] rounded-sm flex flex-col border
+        border-[#444444] max-h-canvas overflow-hidden"
     >
       {/* Header with Add Button */}
       <div className="flex items-center justify-between p-3 pb-2 shrink-0">

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { RgbaColorPicker, RgbColorPicker } from "react-colorful";
 import DeleteIcon from "./DeleteIcon";
+import { ColorPicker } from "./color-picker/ColorPicker";
+import { ColorPickerInput } from "./color-picker/ColorPickerInput";
+import { rgbaToCssString } from "./color-picker/utils";
 
 interface ColorControlProps {
   id: string;
@@ -27,18 +29,20 @@ export const ColorControl: React.FC<ColorControlProps> = ({
     bottom?: number;
     left: number;
   }>({ left: 0 });
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  // Get current color in RGBA [0-1]
+  const [r, g, b, a = 1] = value;
 
   // Calculate picker position when it opens
   useEffect(() => {
     if (showPicker && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      const pickerHeight = 320; // Approximate height of color picker + button
+      const pickerHeight = 380;
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
 
-      // Position picker above if not enough space below
       if (spaceBelow < pickerHeight && spaceAbove > spaceBelow) {
         setPickerPosition({
           bottom: viewportHeight - rect.top + 8,
@@ -53,99 +57,85 @@ export const ColorControl: React.FC<ColorControlProps> = ({
     }
   }, [showPicker]);
 
-  // Convert from GLSL [0-1] to RGB [0-255]
-  const toRgb = (
-    glslValue: [number, number, number] | [number, number, number, number],
-  ) => {
-    if (type === "vec3") {
-      const [r, g, b] = glslValue as [number, number, number];
-      return {
-        r: Math.round(r * 255),
-        g: Math.round(g * 255),
-        b: Math.round(b * 255),
-      };
-    } else {
-      const [r, g, b, a] = glslValue as [number, number, number, number];
-      return {
-        r: Math.round(r * 255),
-        g: Math.round(g * 255),
-        b: Math.round(b * 255),
-        a: a ?? 1,
-      };
-    }
-  };
-
-  // Convert from RGB [0-255] to GLSL [0-1]
-  const toGlsl = (rgbValue: {
-    r: number;
-    g: number;
-    b: number;
-    a?: number;
-  }): [number, number, number] | [number, number, number, number] => {
-    if (type === "vec3") {
-      return [rgbValue.r / 255, rgbValue.g / 255, rgbValue.b / 255];
-    } else {
-      return [
-        rgbValue.r / 255,
-        rgbValue.g / 255,
-        rgbValue.b / 255,
-        rgbValue.a ?? 1,
-      ];
-    }
-  };
-
-  const currentColor = toRgb(value);
-
-  // Ensure alpha is always defined for vec4
-  const currentColorWithAlpha =
-    type === "vec4"
-      ? { ...currentColor, a: currentColor.a ?? 1 }
-      : currentColor;
-
-  const colorPreview =
-    type === "vec3"
-      ? `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`
-      : `rgba(${currentColorWithAlpha.r}, ${currentColorWithAlpha.g}, ${currentColorWithAlpha.b}, ${currentColorWithAlpha.a})`;
-
-  const colorText =
-    type === "vec3"
-      ? `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`
-      : `rgba(${currentColorWithAlpha.r}, ${currentColorWithAlpha.g}, ${currentColorWithAlpha.b}, ${currentColorWithAlpha.a?.toFixed(2)})`;
+  // Color strings for display
+  const colorPreview = rgbaToCssString(r, g, b, a);
+  
+  // Show percentage for alpha in vec4
+  const alphaPercent = Math.round(a * 100);
 
   return (
     <div className="mb-1 relative">
       <div className="mb-1 flex items-center justify-between">
         <label
           htmlFor={id}
-          className="text-sm font-medium text-white cursor-pointer"
-          onClick={() => setShowPicker(!showPicker)}
+          className="text-xs font-normal text-white cursor-default select-none"
         >
           {label}
         </label>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{colorText}</span>
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              className="text-gray-400 hover:text-red-400 transition-colors"
-              title="Delete uniform"
-            >
-              <DeleteIcon className="h-3 w-3 fill-red-600 cursor-pointer right-2 top-9" />
-            </button>
-          )}
-        </div>
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="text-gray-400 hover:text-red-400 transition-colors"
+            title="Delete uniform"
+            style={{ cursor: "default" }}
+          >
+            <DeleteIcon className="h-3 w-3" />
+          </button>
+        )}
       </div>
 
-      {/* Color swatch button */}
-      <button
+      {/* Value field container - Figma style */}
+      <div
         ref={buttonRef}
-        type="button"
         onClick={() => setShowPicker(!showPicker)}
-        className="w-full h-10 rounded border-2 border-gray-600
-          hover:border-primary transition-colors cursor-pointer"
-        style={{ backgroundColor: colorPreview }}
+        className="flex items-center h-6 rounded-sm bg-[#373737] outline-1 -outline-offset-1 outline-transparent
+          hover:outline-[#8c8c8c] transition-colors"
+        style={{ cursor: "default" }}
         title="Click to open color picker"
-      />
+      >
+        {/* Color swatch - left side with border */}
+        <div className="relative flex items-center justify-center h-6 w-6 shrink-0">
+          {/* Checkerboard background for transparency */}
+          {type === "vec4" && a < 1 && (
+            <div 
+              className="absolute inset-[3px] rounded-[3px]"
+              style={{
+                backgroundImage: `url('data:image/svg+xml;utf8,<svg width="2" height="2" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1v2h1V1H0" fill-rule="nonzero" fill="%23e1e1e1"/></svg>')`,
+                backgroundSize: "4px 4px",
+                backgroundColor: "#fff",
+              }}
+            />
+          )}
+          {/* Actual color */}
+          <div 
+            className="absolute inset-[3px] rounded-[3px]"
+            style={{ backgroundColor: colorPreview }}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="h-4 w-px bg-[#2d2d2d] shrink-0" />
+
+        {/* Hex value - center (editable) */}
+        <ColorPickerInput 
+          r={r} 
+          g={g} 
+          b={b} 
+          a={a} 
+          type={type} 
+          onChange={onChange} 
+        />
+
+        {/* Alpha percentage for vec4 - right side */}
+        {type === "vec4" && (
+          <>
+            <div className="h-4 w-px bg-[#1e1e1e] shrink-0" />
+            <div className="w-11 px-2 text-xs font-normal text-[#b3b3b3] text-center select-none">
+              {alphaPercent}%
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Color picker popover */}
       {showPicker && (
@@ -156,43 +146,17 @@ export const ColorControl: React.FC<ColorControlProps> = ({
             onClick={() => setShowPicker(false)}
           />
 
-          {/* Picker popup - fixed positioning with smart placement */}
+          {/* Picker popup - Figma style */}
           <div
-            className="fixed z-50 p-3 bg-[#1e1e1e] border border-gray-600
-              rounded shadow-lg max-h-[90vh] overflow-y-auto"
+            className="fixed z-50"
             style={pickerPosition}
           >
-            {type === "vec3" ? (
-              <RgbColorPicker
-                color={currentColor as { r: number; g: number; b: number }}
-                onChange={(newColor) => {
-                  onChange(toGlsl(newColor));
-                }}
-              />
-            ) : (
-              <RgbaColorPicker
-                color={
-                  currentColorWithAlpha as {
-                    r: number;
-                    g: number;
-                    b: number;
-                    a: number;
-                  }
-                }
-                onChange={(newColor) => {
-                  onChange(toGlsl(newColor));
-                }}
-              />
-            )}
-
-            <button
-              onClick={() => setShowPicker(false)}
-              className="mt-3 w-full px-3 py-1.5 bg-primary
-                hover:bg-primary-hover active:bg-primary-active text-white
-                text-sm rounded transition-colors"
-            >
-              Done
-            </button>
+            <ColorPicker 
+              value={value} 
+              type={type} 
+              onChange={onChange} 
+              onClose={() => setShowPicker(false)} 
+            />
           </div>
         </>
       )}
