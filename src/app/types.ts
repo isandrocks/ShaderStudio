@@ -70,3 +70,45 @@ export type ModalType =
   | "presets"
   | "save"
   | "saved-shaders";
+
+// ============================================================================
+// Layer-Based Builder Types
+// ============================================================================
+
+export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "add";
+
+export type EffectType = "shape" | "pattern" | "gradient" | "effect";
+
+export interface EffectLayer {
+  id: string;
+  name: string;
+  type: EffectType;
+  effectId: string; // ID of the template used (e.g., "circle", "wave")
+  visible: boolean;
+  opacity: number; // 0-1
+  blendMode: BlendMode;
+  // Properties specific to this effect instance
+  // These map to uniforms but are stored here for the UI
+  properties: Record<string, UniformValue>;
+}
+
+export interface EffectTemplate {
+  id: string;
+  name: string;
+  type: EffectType;
+  icon: React.ReactNode; // Icon component
+  description: string;
+  // GLSL function definition to inject
+  glslFunction: string;
+  // How to call the function: "myEffect(uv, {prop1}, {prop2})"
+  glslCall: string;
+  // Default properties for this effect
+  defaultProperties: Record<string, {
+    value: UniformValue;
+    type: UniformType;
+    min?: number;
+    max?: number;
+    step?: number;
+    label: string;
+  }>;
+}

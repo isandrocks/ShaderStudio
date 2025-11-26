@@ -63,6 +63,12 @@ The `dist/` folder is **git-ignored** and generated on each build.
 - Easier testing and debugging
 - Better code navigation
 
+### Icon Management
+**CRITICAL**: All SVG icon components must be placed in `src/app/components/icons/`.
+- Do not place icon files directly in `src/app/components/`.
+- Use the existing icon components as templates for new icons.
+- Ensure icons use `currentColor` for fill/stroke to support theming.
+
 ### App.tsx Architecture
 **`App.tsx` is ONLY for component composition and layout**. It should:
 - ✅ Import components and hooks

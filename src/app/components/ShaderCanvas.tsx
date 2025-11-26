@@ -1,4 +1,8 @@
 import React from "react";
+import PlayIcon from "./icons/PlayIcon";
+import PauseIcon from "./icons/PauseIcon";
+import OverlayIcon from "./icons/OverlayIcon";
+import OverlayOffIcon from "./icons/OverlayOffIcon";
 
 interface ShaderCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -8,6 +12,7 @@ interface ShaderCanvasProps {
   aspectWidth?: number;
   aspectHeight?: number;
   onToggleOverlay?: () => void;
+  className?: string;
 }
 
 const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
@@ -18,6 +23,7 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
   aspectWidth = 512,
   aspectHeight = 512,
   onToggleOverlay,
+  className = "w-canvas h-canvas",
 }) => {
   const [manualOverlay, setManualOverlay] = React.useState(false);
   
@@ -52,9 +58,9 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
   const overlayTop = (canvasSize - overlayHeight) / 2;
   return (
     <div
-      className="w-canvas h-canvas rounded-lg overflow-hidden
+      className={`${className} rounded-lg overflow-hidden
         shadow-[0_2px_8px_rgba(0,0,0,0.5),0_0_0_1px_#3c3c3c]
-        bg-black relative"
+        bg-black relative shrink-0`}
     >
       <div
         className="absolute top-0 left-0 right-0 flex items-center p-[7px_11px]
@@ -72,7 +78,7 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
             gap-2 px-2 py-1 rounded-md bg-[rgba(0,0,0,0.35)] backdrop-blur-sm
             transition-colors duration-150 hover:text-white active:scale-[0.97]"
         >
-          <span className="text-sm select-none">{isPaused ? "⏸︎" : "⏵︎"}</span>
+          {isPaused ? <PlayIcon className="w-3 h-3" /> : <PauseIcon className="w-3 h-3" />}
         </button>
         
         <button
@@ -87,7 +93,7 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
             gap-2 px-2 py-1 rounded-md bg-[rgba(0,0,0,0.35)] backdrop-blur-sm
             transition-colors duration-150 hover:text-white active:scale-[0.97]"
         >
-          <span className="text-sm select-none">{manualOverlay ? "◰" : "◱"}</span>
+          {manualOverlay ? <OverlayIcon className="w-3 h-3" /> : <OverlayOffIcon className="w-3 h-3" />}
         </button>
       </div>
       

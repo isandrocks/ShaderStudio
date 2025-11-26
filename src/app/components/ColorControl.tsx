@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import MinusIcon from "./MinusIcon";
+import MinusIcon from "./icons/MinusIcon";
 import { ColorPicker } from "./color-picker/ColorPicker";
 import { ColorPickerInput } from "./color-picker/ColorPickerInput";
 import { rgbaToCssString } from "./color-picker/utils";

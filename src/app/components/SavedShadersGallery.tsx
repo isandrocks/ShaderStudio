@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { SavedShader } from "../types";
-import DeleteIcon from "./DeleteIcon";
+import DeleteIcon from "./icons/DeleteIcon";
 
 interface SavedShadersGalleryProps {
   isOpen: boolean;

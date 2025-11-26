@@ -7,7 +7,7 @@ import { PresetGallery } from "./components/PresetGallery";
 import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
 import { VideoExportModal } from "./components/video-export";
-import HelpIcon from "./components/HelpIcon";
+import HelpIcon from "./components/icons/HelpIcon";
 import { SHADER_PRESETS } from "./presets";
 import { useSyncedRef, useShaderEngine, useShaderLifecycle } from "./hooks";
 import {
@@ -17,10 +17,18 @@ import {
   createModalHandlers,
   createVideoExportHandler,
 } from "./handlers";
+import { LayerPanel } from "./components/layers/LayerPanel";
+import { LayerProperties } from "./components/layers/LayerProperties";
+import { EffectPicker } from "./components/layers/EffectPicker";
+import { createLayerHandlers } from "./handlers/layerHandlers";
+import { generateLayeredShader } from "./utils/layerShaderGenerator";
+import { LAYER_TEMPLATES } from "./layerTemplates";
+import { injectUniforms } from "./webgl";
 import type {
   ShaderState,
   SavedShader,
   ModalType,
+  EffectLayer, // Added
 } from "./types";
 
 const App: React.FC = () => {
@@ -44,7 +52,17 @@ const App: React.FC = () => {
   const [shaderCode, setShaderCode] = useState(
     SHADER_PRESETS[0].fragmentShader,
   );
+  // State: Base shader for layering (preserves code when switching to builder)
+  const [baseShaderCode, setBaseShaderCode] = useState(
+    SHADER_PRESETS[0].fragmentShader,
+  );
   const [shaderError, setShaderError] = useState("");
+
+  // Helper to update both shader code and base shader
+  const handleShaderUpdate = (code: string) => {
+    setShaderCode(code);
+    setBaseShaderCode(code);
+  };
 
   // State: selection and rendering
   const [selectionError, setSelectionError] = useState("");
@@ -55,6 +73,12 @@ const App: React.FC = () => {
   const [dynamicUniforms, setDynamicUniforms] = useState(
     SHADER_PRESETS[0].defaultUniforms,
   );
+
+  // State: Layer Builder
+  const [layers, setLayers] = useState<EffectLayer[]>([]);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
+  const [isEffectPickerOpen, setIsEffectPickerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"builder" | "code">("code"); // Default to code for now
 
   // Refs: shader state
   const shaderStateRef = useRef<ShaderState>({
@@ -106,7 +130,7 @@ const App: React.FC = () => {
     createShaderLoadHandlers(
       customFragmentShaderRef,
       shaderStateRef,
-      setShaderCode,
+      handleShaderUpdate, // Use helper to update base as well
       setDynamicUniforms,
       setShaderError,
       setCriticalError,
@@ -133,7 +157,7 @@ const App: React.FC = () => {
     customFragmentShaderRef,
     modalShaderSnapshotRef,
     handleRecompileShader,
-    setShaderCode,
+    handleShaderUpdate, // Use helper to update base as well
     setShaderError,
   );
 
@@ -147,6 +171,44 @@ const App: React.FC = () => {
     setCriticalError,
   );
 
+  // Layer handlers
+  const {
+    addLayer,
+    removeLayer,
+    updateLayer,
+    updateLayerProperty,
+    reorderLayers,
+  } = createLayerHandlers(
+    layers,
+    setLayers,
+    dynamicUniforms,
+    setDynamicUniforms,
+    setSelectedLayerId,
+  );
+
+  // Effect: Generate shader when layers change
+  React.useEffect(() => {
+    if (viewMode === "builder") {
+      // Pass baseShaderCode to inject layers into it
+      const newShader = generateLayeredShader(
+        layers,
+        LAYER_TEMPLATES,
+        baseShaderCode,
+      );
+      // Inject uniform declarations so they appear in Advanced Editor
+      const shaderWithUniforms = injectUniforms(newShader, dynamicUniforms);
+      setShaderCode(shaderWithUniforms);
+      handleRecompileShader(newShader);
+    }
+  }, [
+    layers,
+    viewMode,
+    handleRecompileShader,
+    setShaderCode,
+    baseShaderCode,
+    dynamicUniforms,
+  ]);
+
   // Lifecycle hook
   useShaderLifecycle({
     canvasRef,
@@ -157,7 +219,7 @@ const App: React.FC = () => {
     renderLoop,
     handleShaderError,
     handleRecompileShader,
-    setShaderCode,
+    setShaderCode: handleShaderUpdate, // Use helper to update base as well
     setSavedShaders,
     setSelectionError,
     setRenderWidth,
@@ -193,24 +255,46 @@ const App: React.FC = () => {
       )}
 
       <div className="flex gap-4 items-start">
-        <ControlPanel
-          onApplyToSelection={handleApplyToSelection}
-          onCreateRectangle={handleCreateRectangle}
-          selectionError={selectionError}
-          onAdvancedEditorClick={() => {
-            // Capture current shader state as snapshot for reset
-            modalShaderSnapshotRef.current = shaderCode;
-            setOpenModal("shader");
-          }}
-          onPresetsClick={() => setOpenModal("presets")}
-          onSaveShader={() => setOpenModal("save")}
-          onOpenSavedShaders={() => setOpenModal("saved-shaders")}
-          onExportVideo={() => setIsVideoModalOpen(true)}
-          dynamicUniforms={dynamicUniforms}
-          onAddUniform={() => setOpenModal("config")}
-          onUpdateUniform={updateUniform}
-          onRemoveUniform={removeUniform}
-        />
+        {viewMode === "builder" ? (
+          <LayerPanel
+            layers={layers}
+            selectedLayerId={selectedLayerId}
+            onSelect={setSelectedLayerId}
+            onAdd={() => setIsEffectPickerOpen(true)}
+            onRemove={removeLayer}
+            onToggleVisibility={(id) =>
+              updateLayer(id, {
+                visible: !layers.find((l) => l.id === id)?.visible,
+              })
+            }
+            onReorder={reorderLayers}
+            onToggleCodeMode={() => setViewMode("code")}
+          />
+        ) : (
+          <ControlPanel
+            onApplyToSelection={handleApplyToSelection}
+            onCreateRectangle={handleCreateRectangle}
+            selectionError={selectionError}
+            onAdvancedEditorClick={() => {
+              // Capture current shader state as snapshot for reset
+              modalShaderSnapshotRef.current = shaderCode;
+              setOpenModal("shader");
+            }}
+            onPresetsClick={() => setOpenModal("presets")}
+            onSaveShader={() => setOpenModal("save")}
+            onOpenSavedShaders={() => setOpenModal("saved-shaders")}
+            onExportVideo={() => setIsVideoModalOpen(true)}
+            dynamicUniforms={dynamicUniforms}
+            onAddUniform={() => setOpenModal("config")}
+            onUpdateUniform={updateUniform}
+            onRemoveUniform={removeUniform}
+            onToggleBuilderMode={() => {
+              // Sync base shader when entering builder mode
+              setBaseShaderCode(shaderCode);
+              setViewMode("builder");
+            }}
+          />
+        )}
 
         <ShaderCanvas
           canvasRef={canvasRef}
@@ -220,7 +304,21 @@ const App: React.FC = () => {
           aspectWidth={renderWidth}
           aspectHeight={renderHeight}
           onToggleOverlay={handleToggleOverlay}
+          className={viewMode === "builder" ? "w-[340px] h-[340px]" : undefined}
         />
+
+        {viewMode === "builder" && (
+          <LayerProperties
+            layer={layers.find((l) => l.id === selectedLayerId) || null}
+            onUpdate={(updates) =>
+              selectedLayerId && updateLayer(selectedLayerId, updates)
+            }
+            onUpdateProperty={(key, value) =>
+              selectedLayerId &&
+              updateLayerProperty(selectedLayerId, key, value)
+            }
+          />
+        )}
       </div>
 
       <p className="text-[11px] text-[#999999] text-center max-w-lg absolute bottom-4">
@@ -256,6 +354,15 @@ const App: React.FC = () => {
         )}
       </div>
 
+      <EffectPicker
+        isOpen={isEffectPickerOpen}
+        onClose={() => setIsEffectPickerOpen(false)}
+        onSelect={(templateId) => {
+          addLayer(templateId);
+          setIsEffectPickerOpen(false);
+        }}
+      />
+
       <ShaderModal
         isOpen={openModal === "shader"}
         shaderCode={shaderCode}
@@ -264,7 +371,7 @@ const App: React.FC = () => {
           modalShaderSnapshotRef.current = null;
           setOpenModal("none");
         }}
-        onShaderChange={setShaderCode}
+        onShaderChange={handleShaderUpdate} // Update base as well
         onApply={handleApplyShader}
         onReset={handleResetShader}
         onClearError={() => setShaderError("")}

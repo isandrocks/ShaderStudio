@@ -1,6 +1,11 @@
 // This shows the HTML page in "ui.html".
 figma.showUI(__html__, { themeColors: true, width: 825, height: 575 });
 
+// Listen for selection changes to update overlay dimensions
+figma.on("selectionchange", () => {
+  getSelectionDimensions();
+});
+
 let currentRect: RectangleNode | null = null;
 
 // SavedShader interface for document storage

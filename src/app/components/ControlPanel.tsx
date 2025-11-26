@@ -1,14 +1,15 @@
 import React from "react";
 import SliderControl from "./SliderControl";
 import { ColorControl } from "./ColorControl";
-import PlusIcon from "./PlusIcon";
-import SaveIcon from "./SaveIcon";
-import ChevronDownIcon from "./ChevronDownIcon";
-import EditIcon from "./EditIcon";
-import PaletteIcon from "./PaletteIcon";
-import FolderIcon from "./FolderIcon";
-import RectangleIcon from "./RectangleIcon";
-import VideoIcon from "./VideoIcon";
+import PlusIcon from "./icons/PlusIcon";
+import SaveIcon from "./icons/SaveIcon";
+import ChevronDownIcon from "./icons/ChevronDownIcon";
+import EditIcon from "./icons/EditIcon";
+import PaletteIcon from "./icons/PaletteIcon";
+import FolderIcon from "./icons/FolderIcon";
+import RectangleIcon from "./icons/RectangleIcon";
+import VideoIcon from "./icons/VideoIcon";
+import LayersIcon from "./icons/LayersIcon";
 import type { DynamicUniform, UniformValue } from "../types";
 
 interface ControlPanelProps {
@@ -24,6 +25,7 @@ interface ControlPanelProps {
   onAddUniform: () => void;
   onUpdateUniform: (id: string, value: UniformValue) => void;
   onRemoveUniform: (id: string) => void;
+  onToggleBuilderMode: () => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -39,6 +41,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onAddUniform,
   onUpdateUniform,
   onRemoveUniform,
+  onToggleBuilderMode,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [isApplyDropdownOpen, setIsApplyDropdownOpen] = React.useState(false);
@@ -258,6 +261,18 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </div>
           )}
         </div>
+
+        <button
+          onClick={onToggleBuilderMode}
+          className="w-full h-7 px-3 text-xs font-medium bg-[#3c3c3c]
+            text-gray-300 rounded-md cursor-pointer transition-all
+            duration-150 outline-none border border-[#4c4c4c]
+            hover:bg-[#454545] hover:border-[#5c5c5c]
+            flex items-center justify-center gap-2"
+        >
+          <LayersIcon className="w-3.5 h-3.5" />
+          <span>Visual Builder</span>
+        </button>
       </div>
     </div>
   );

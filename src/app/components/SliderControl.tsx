@@ -1,5 +1,5 @@
 import React from "react";
-import MinusIcon from "./MinusIcon";
+import MinusIcon from "./icons/MinusIcon";
 
 interface SliderControlProps {
   id: string;

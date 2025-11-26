@@ -1,4 +1,4 @@
-import { DynamicUniform } from "./webgl";
+import { DynamicUniform } from "./types";
 import { PRESET_THUMBNAILS } from "./generated/preset-thumbnails";
 
 export type ShaderCategory = "waves" | "noise" | "patterns" | "effects";
@@ -47,8 +47,8 @@ void main() {
   
   // Background gradient using color uniforms
   col.xyz = mix(uBgColor1, uBgColor2, uv.x + uv.y);
-  
-  uv -= 0.5;
+  vec2 uvwave = uv;
+  uvwave -= 0.5;
   
   float aaDy = iResolution.y * 0.000005;
   
@@ -61,7 +61,7 @@ void main() {
       float softness = aaDy + bokeh * 0.2;
       float amp = uAmplitude - 0.05 * t;
       float amt = max(0.0, pow(1.0 - bokeh, 2.0) * 0.9);
-      col.xyz += wave(uv, uSpeed * (1.0 + t), uAmplitude, thickness, softness) * lineCol * amt;
+      col.xyz += wave(uvwave, uSpeed * (1.0 + t), uAmplitude, thickness, softness) * lineCol * amt;
     }
   }
   
@@ -156,6 +156,7 @@ uniform float uAmplitude;
 uniform float uThickness;
 
 void main() {
+    vec4 col = vec4(0.0);
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     
     float wave = 0.5 + uAmplitude * sin(uv.x * 6.28318 * 3.0 + iTime * uSpeed);
@@ -165,8 +166,10 @@ void main() {
     vec3 bgColor = vec3(0.1, 0.1, 0.15);
     vec3 waveColor = vec3(0.2, 0.6, 1.0);
     vec3 color = mix(bgColor, waveColor, line);
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -212,6 +215,7 @@ uniform float uSoftness;
 uniform float uPulse;
 
 void main() {
+    vec4 col = vec4(0.0);
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     vec2 center = vec2(0.5, 0.5);
     
@@ -222,8 +226,10 @@ void main() {
     vec3 color1 = vec3(0.1, 0.2, 0.5);
     vec3 color2 = vec3(0.9, 0.4, 0.6);
     vec3 color = mix(color1, color2, gradient);
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -269,6 +275,7 @@ uniform float uLineWidth;
 uniform float uGlow;
 
 void main() {
+    vec4 col = vec4(0.0);
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     
     vec2 grid = fract(uv * uGridSize);
@@ -282,8 +289,10 @@ void main() {
     vec3 gridColor = vec3(0.2, 0.6, 1.0) * (1.0 + pulse * uGlow);
     
     vec3 color = mix(bgColor, gridColor, line);
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -329,6 +338,7 @@ uniform float uScale;
 uniform float uIntensity;
 
 void main() {
+    vec4 col = vec4(0.0);
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     
     float time = iTime * uSpeed;
@@ -346,8 +356,10 @@ void main() {
         sin(plasma * 3.14159 * uIntensity + 2.0) * 0.5 + 0.5,
         sin(plasma * 3.14159 * uIntensity + 4.0) * 0.5 + 0.5
     );
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -393,6 +405,7 @@ uniform float uRotation;
 uniform float uBlend;
 
 void main() {
+    vec4 col = vec4(0.0);
     vec2 uv = gl_FragCoord.xy / iResolution.xy - 0.5;
     
     // Rotate
@@ -410,8 +423,10 @@ void main() {
     
     // Smooth blend
     color = mix(color, vec3(0.5), uBlend);
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -457,6 +472,7 @@ uniform float uFrequency;
 uniform float uAmplitude;
 
 void main() {
+    vec4 col = vec4(0.0);
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     vec2 center = vec2(0.5, 0.5);
     
@@ -465,8 +481,10 @@ void main() {
     
     float brightness = 0.5 + ripple;
     vec3 color = vec3(0.2, 0.5, 0.8) * brightness;
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -517,6 +535,7 @@ float random(vec2 st) {
 }
 
 void main() {
+    vec4 col = vec4(0.0);
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     vec2 pos = uv * uScale + iTime * uSpeed;
     
@@ -524,8 +543,10 @@ void main() {
     noise = pow(noise, 1.0 / uContrast);
     
     vec3 color = vec3(noise);
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -582,8 +603,10 @@ void main() {
         vec3(0.8, 0.3, 0.6),
         gradient
     );
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    vec4 col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
@@ -640,8 +663,10 @@ void main() {
     float glow = exp(-dist * uGlow) * pulse;
     
     vec3 color = vec3(0.3, 0.6, 1.0) * (circle + glow * 0.5);
-    
-    gl_FragColor = vec4(color, 1.0);
+
+    vec4 col = vec4(color, 1.0);
+
+    gl_FragColor = col;
 }`,
     defaultUniforms: [
       {
