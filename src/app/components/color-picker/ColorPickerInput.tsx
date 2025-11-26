@@ -7,10 +7,19 @@ interface ColorPickerInputProps {
   b: number;
   a: number;
   type: "vec3" | "vec4";
-  onChange: (value: [number, number, number] | [number, number, number, number]) => void;
+  onChange: (
+    value: [number, number, number] | [number, number, number, number],
+  ) => void;
 }
 
-export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({ r, g, b, a, type, onChange }) => {
+export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
+  r,
+  g,
+  b,
+  a,
+  type,
+  onChange,
+}) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [inputValue, setInputValue] = React.useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +50,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({ r, g, b, a, 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       const result = parseHexInput(inputValue, a);
       if (result) {
@@ -52,19 +61,19 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({ r, g, b, a, 
         }
       }
       setIsEditing(false);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       e.preventDefault();
       setIsEditing(false);
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       e.preventDefault();
       const amount = e.shiftKey ? 10 : 1;
-      const direction = e.key === 'ArrowUp' ? amount : -amount;
-      
+      const direction = e.key === "ArrowUp" ? amount : -amount;
+
       // Increment RGB values
       const newR = Math.max(0, Math.min(1, r + direction / 255));
       const newG = Math.max(0, Math.min(1, g + direction / 255));
       const newB = Math.max(0, Math.min(1, b + direction / 255));
-      
+
       if (type === "vec3") {
         onChange([newR, newG, newB]);
       } else {
@@ -83,7 +92,8 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({ r, g, b, a, 
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         onClick={(e) => e.stopPropagation()}
-        className="flex-1 w-full min-w-0 px-2 text-xs font-normal text-white text-left bg-transparent outline-none"
+        className="flex-1 w-full min-w-0 px-2 text-xs font-normal text-white
+          text-left bg-transparent outline-none"
         style={{ cursor: "text" }}
         maxLength={8}
         spellCheck={false}
@@ -94,8 +104,9 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({ r, g, b, a, 
   }
 
   return (
-    <div 
-      className="flex-1 px-2 text-xs font-normal text-white text-left select-none"
+    <div
+      className="flex-1 px-2 text-xs font-normal text-white text-left
+        select-none"
       onClick={handleClick}
     >
       {hexValue}

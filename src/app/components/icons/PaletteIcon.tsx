@@ -21,9 +21,9 @@ const PaletteIcon: React.FC<PaletteIconProps> = ({ className }) => {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="5.33333" cy="6.66667" r="0.666667" fill="currentColor"/>
-      <circle cx="10" cy="5.33333" r="0.666667" fill="currentColor"/>
-      <circle cx="10.6667" cy="9.33333" r="0.666667" fill="currentColor"/>
+      <circle cx="5.33333" cy="6.66667" r="0.666667" fill="currentColor" />
+      <circle cx="10" cy="5.33333" r="0.666667" fill="currentColor" />
+      <circle cx="10.6667" cy="9.33333" r="0.666667" fill="currentColor" />
     </svg>
   );
 };

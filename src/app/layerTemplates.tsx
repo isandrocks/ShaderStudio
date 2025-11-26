@@ -59,7 +59,8 @@ vec3 radialGradient(vec2 uv, vec3 centerColor, vec3 outerColor, float radius, ve
     return mix(centerColor, outerColor, clamp(t, 0.0, 1.0));
 }
 `,
-    glslCall: "radialGradient(uv, {centerColor}, {outerColor}, {radius}, {center}.xy)",
+    glslCall:
+      "radialGradient(uv, {centerColor}, {outerColor}, {radius}, {center}.xy)",
     defaultProperties: {
       centerColor: {
         value: [1.0, 0.8, 0.2],
@@ -80,9 +81,9 @@ vec3 radialGradient(vec2 uv, vec3 centerColor, vec3 outerColor, float radius, ve
         label: "Radius",
       },
       center: {
-        value: [0.5, 0.5, 0.0], // vec3 used as vec2 + padding
-        type: "vec3", // Using vec3 for position to reuse color picker/inputs if needed, or we can add vec2 support later
-        label: "Center", // For now we might treat this as just X/Y sliders if we had vec2 support
+        value: [0.5, 0.5],
+        type: "vec2",
+        label: "Center",
       },
     },
   },
@@ -103,7 +104,7 @@ vec3 circleShape(vec2 uv, vec3 color, float radius, vec2 center, float softness)
     return color * alpha;
 }
 `,
-    glslCall: "circleShape(uv, {color}, {radius}, vec2(0.5), {softness})",
+    glslCall: "circleShape(uv, {color}, {radius}, {center}, {softness})",
     defaultProperties: {
       color: {
         value: [1.0, 1.0, 1.0],
@@ -125,6 +126,11 @@ vec3 circleShape(vec2 uv, vec3 color, float radius, vec2 center, float softness)
         max: 0.5,
         step: 0.01,
         label: "Softness",
+      },
+      center: {
+        value: [0.5, 0.5],
+        type: "vec2",
+        label: "Center",
       },
     },
   },

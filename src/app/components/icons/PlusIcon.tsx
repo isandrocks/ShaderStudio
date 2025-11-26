@@ -14,7 +14,8 @@ const PlusIcon: React.FC<{ onClick?: () => void; title?: string }> = ({
         transition-colors duration-150 flex items-center justify-center"
     >
       <svg
-        className="fill-primary h-4 w-4 hover:fill-white transition-colors duration-150"
+        className="fill-primary h-4 w-4 hover:fill-white transition-colors
+          duration-150"
         viewBox="0 0 12.7 12.7"
         version="1.1"
         id="plusIcon"

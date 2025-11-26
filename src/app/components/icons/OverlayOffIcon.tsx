@@ -1,6 +1,8 @@
 import React from "react";
 
-const OverlayOffIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
+const OverlayOffIcon: React.FC<{ className?: string }> = ({
+  className = "w-4 h-4",
+}) => (
   <svg
     width="16"
     height="16"

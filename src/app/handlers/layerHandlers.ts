@@ -8,9 +8,8 @@ export const createLayerHandlers = (
   setLayers: Dispatch<SetStateAction<EffectLayer[]>>,
   dynamicUniforms: DynamicUniform[],
   setDynamicUniforms: Dispatch<SetStateAction<DynamicUniform[]>>,
-  setSelectedLayerId: Dispatch<SetStateAction<string | null>>
+  setSelectedLayerId: Dispatch<SetStateAction<string | null>>,
 ) => {
-  
   const generateLayerId = () => {
     // Short 4-char ID for cleaner uniform names (e.g. L9X2A)
     return `L${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
@@ -36,15 +35,15 @@ export const createLayerHandlers = (
         min: 0.0,
         max: 1.0,
         step: 0.01,
-      })
+      }),
     );
 
     // 2. Create Property Uniforms
     const layerProperties: Record<string, UniformValue> = {};
-    
+
     Object.entries(template.defaultProperties).forEach(([key, prop]) => {
       const uniformName = `u_${layerId}_${key}`;
-      
+
       newUniforms.push(
         createDynamicUniform({
           name: uniformName,
@@ -53,7 +52,7 @@ export const createLayerHandlers = (
           min: prop.min || 0,
           max: prop.max || 1,
           step: prop.step || 0.01,
-        })
+        }),
       );
 
       layerProperties[key] = prop.value;
@@ -80,18 +79,20 @@ export const createLayerHandlers = (
   const removeLayer = (layerId: string) => {
     // Remove layer
     setLayers((prev) => prev.filter((l) => l.id !== layerId));
-    
+
     // Remove associated uniforms
     // We identify them by the prefix u_{layerId}_
     const prefix = `u_${layerId}_`;
-    setDynamicUniforms((prev) => prev.filter((u) => !u.name.startsWith(prefix)));
-    
+    setDynamicUniforms((prev) =>
+      prev.filter((u) => !u.name.startsWith(prefix)),
+    );
+
     setSelectedLayerId(null);
   };
 
   const updateLayer = (layerId: string, updates: Partial<EffectLayer>) => {
     setLayers((prev) =>
-      prev.map((l) => (l.id === layerId ? { ...l, ...updates } : l))
+      prev.map((l) => (l.id === layerId ? { ...l, ...updates } : l)),
     );
 
     // If opacity changed, update uniform
@@ -99,26 +100,30 @@ export const createLayerHandlers = (
       const uniformName = `u_${layerId}_opacity`;
       setDynamicUniforms((prev) =>
         prev.map((u) =>
-          u.name === uniformName ? { ...u, value: updates.opacity! } : u
-        )
+          u.name === uniformName ? { ...u, value: updates.opacity! } : u,
+        ),
       );
     }
   };
 
-  const updateLayerProperty = (layerId: string, propKey: string, value: UniformValue) => {
+  const updateLayerProperty = (
+    layerId: string,
+    propKey: string,
+    value: UniformValue,
+  ) => {
     // Update layer state (for UI)
     setLayers((prev) =>
       prev.map((l) =>
         l.id === layerId
           ? { ...l, properties: { ...l.properties, [propKey]: value } }
-          : l
-      )
+          : l,
+      ),
     );
 
     // Update uniform state (for Shader)
     const uniformName = `u_${layerId}_${propKey}`;
     setDynamicUniforms((prev) =>
-      prev.map((u) => (u.name === uniformName ? { ...u, value } : u))
+      prev.map((u) => (u.name === uniformName ? { ...u, value } : u)),
     );
   };
 

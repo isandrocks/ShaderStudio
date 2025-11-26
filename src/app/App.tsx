@@ -305,6 +305,7 @@ const App: React.FC = () => {
           aspectHeight={renderHeight}
           onToggleOverlay={handleToggleOverlay}
           className={viewMode === "builder" ? "w-[340px] h-[340px]" : undefined}
+          hideOverlayControls={viewMode === "builder"}
         />
 
         {viewMode === "builder" && (
@@ -321,14 +322,18 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <p className="text-[11px] text-[#999999] text-center max-w-lg absolute bottom-4">
+      <p
+        className="text-[11px] text-[#999999] text-center max-w-lg absolute
+          bottom-4"
+      >
         Live shader preview above • Adjust parameters in real-time
       </p>
 
       {/* Help Icon & Tooltip */}
       <div className="absolute bottom-4 left-4 z-10">
         <div
-          className="text-[#999999] hover:text-white cursor-pointer transition-colors"
+          className="text-[#999999] hover:text-white cursor-pointer
+            transition-colors"
           onMouseEnter={() => setShowHelp(true)}
           onMouseLeave={() => setShowHelp(false)}
         >
@@ -336,20 +341,37 @@ const App: React.FC = () => {
         </div>
 
         {showHelp && (
-          <div className="absolute bottom-8 left-0 w-64 bg-[#2c2c2c] border border-[#3c3c3c] rounded-lg p-3 shadow-xl text-xs text-gray-300">
-            <h4 className="font-bold text-white mb-2">Using Parameters</h4>
-            <ol className="list-decimal pl-4 space-y-1">
-              <li>Add a parameter using the + button</li>
-              <li>Open Advanced Editor</li>
-              <li>
-                Declare the uniform in your code (e.g.{" "}
-                <code className="bg-[#1e1e1e] px-1 rounded">
-                  uniform float myParam;
-                </code>
-                )
-              </li>
-              <li>Control the value from the main panel</li>
-            </ol>
+          <div
+            className="absolute bottom-8 left-0 w-64 bg-[#2c2c2c] border
+              border-[#3c3c3c] rounded-lg p-3 shadow-xl text-xs text-gray-300"
+          >
+            {viewMode === "builder" ? (
+              <>
+                <h4 className="font-bold text-white mb-2">Visual Builder</h4>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Add layers using the + button</li>
+                  <li>Select a layer to edit properties</li>
+                  <li>Drag layers to reorder them</li>
+                  <li>Switch to Code mode to see GLSL</li>
+                </ol>
+              </>
+            ) : (
+              <>
+                <h4 className="font-bold text-white mb-2">Using Parameters</h4>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Add a parameter using the + button</li>
+                  <li>Open Advanced Editor</li>
+                  <li>
+                    Declare the uniform in your code (e.g.{" "}
+                    <code className="bg-[#1e1e1e] px-1 rounded">
+                      uniform float myParam;
+                    </code>
+                    )
+                  </li>
+                  <li>Control the value from the main panel</li>
+                </ol>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -417,9 +439,18 @@ const App: React.FC = () => {
 
       {/* Exporting Video Spinner Overlay */}
       {isExportingVideo && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#2a2a2a] rounded-lg p-6 flex flex-col items-center gap-4 border border-[#3c3c3c]">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center
+            z-50"
+        >
+          <div
+            className="bg-[#2a2a2a] rounded-lg p-6 flex flex-col items-center
+              gap-4 border border-[#3c3c3c]"
+          >
+            <div
+              className="w-12 h-12 border-4 border-primary border-t-transparent
+                rounded-full animate-spin"
+            ></div>
             <div className="text-gray-300 font-medium">Exporting Video...</div>
             <div className="text-xs text-gray-500">This may take a moment</div>
           </div>

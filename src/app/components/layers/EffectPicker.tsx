@@ -14,13 +14,16 @@ export const EffectPicker: React.FC<EffectPickerProps> = ({
   onSelect,
 }) => {
   // Group templates by type
-  const groupedTemplates = LAYER_TEMPLATES.reduce((acc, template) => {
-    if (!acc[template.type]) {
-      acc[template.type] = [];
-    }
-    acc[template.type].push(template);
-    return acc;
-  }, {} as Record<string, typeof LAYER_TEMPLATES>);
+  const groupedTemplates = LAYER_TEMPLATES.reduce(
+    (acc, template) => {
+      if (!acc[template.type]) {
+        acc[template.type] = [];
+      }
+      acc[template.type].push(template);
+      return acc;
+    },
+    {} as Record<string, typeof LAYER_TEMPLATES>,
+  );
 
   return (
     <BaseModal
@@ -32,7 +35,10 @@ export const EffectPicker: React.FC<EffectPickerProps> = ({
       <div className="space-y-6">
         {Object.entries(groupedTemplates).map(([type, templates]) => (
           <div key={type}>
-            <h3 className="text-xs font-bold text-[#999] uppercase tracking-wider mb-2">
+            <h3
+              className="text-xs font-bold text-[#999] uppercase tracking-wider
+                mb-2"
+            >
               {type}s
             </h3>
             <div className="grid grid-cols-3 gap-2">
@@ -43,15 +49,23 @@ export const EffectPicker: React.FC<EffectPickerProps> = ({
                     onSelect(template.id);
                     onClose();
                   }}
-                  className="flex flex-col items-center p-3 bg-[#2a2a2a] hover:bg-[#3c3c3c] rounded border border-[#3c3c3c] hover:border-primary transition-colors text-left group"
+                  className="flex flex-col items-center p-3 bg-[#2a2a2a]
+                    hover:bg-[#3c3c3c] rounded border border-[#3c3c3c]
+                    hover:border-primary transition-colors text-left group"
                 >
-                  <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">
+                  <div
+                    className="text-2xl mb-2 group-hover:scale-110
+                      transition-transform"
+                  >
                     {template.icon}
                   </div>
                   <div className="text-xs font-medium text-white mb-1">
                     {template.name}
                   </div>
-                  <div className="text-[10px] text-[#999] text-center leading-tight">
+                  <div
+                    className="text-[10px] text-[#999] text-center
+                      leading-tight"
+                  >
                     {template.description}
                   </div>
                 </button>

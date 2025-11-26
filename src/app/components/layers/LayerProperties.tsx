@@ -3,6 +3,7 @@ import { EffectLayer, BlendMode, UniformValue } from "../../types";
 import { LAYER_TEMPLATES } from "../../layerTemplates";
 import SliderControl from "../SliderControl";
 import { ColorControl } from "../ColorControl";
+import { Vec2Control } from "../Vec2Control";
 
 interface LayerPropertiesProps {
   layer: EffectLayer | null;
@@ -17,7 +18,10 @@ export const LayerProperties: React.FC<LayerPropertiesProps> = ({
 }) => {
   if (!layer) {
     return (
-      <div className="w-60 bg-[#1e1e1e] border-l border-[#3c3c3c] p-4 text-[#999] text-xs text-center">
+      <div
+        className="w-60 bg-[#1e1e1e] border-l border-[#3c3c3c] p-4 text-[#999]
+          text-xs text-center"
+      >
         Select a layer to edit properties
       </div>
     );
@@ -26,21 +30,32 @@ export const LayerProperties: React.FC<LayerPropertiesProps> = ({
   const template = LAYER_TEMPLATES.find((t) => t.id === layer.effectId);
 
   return (
-    <div className="w-60 bg-[#1e1e1e] border-l border-[#3c3c3c] flex flex-col h-full overflow-y-auto">
+    <div
+      className="w-60 bg-[#2c2c2c] border-l border-[#3c3c3c] flex flex-col
+        rounded-sm h-full overflow-y-auto"
+    >
       <div className="p-3 border-b border-[#3c3c3c]">
-        <h2 className="text-xs font-bold text-white uppercase tracking-wider mb-3">
+        <h2
+          className="text-xs font-bold text-white uppercase tracking-wider mb-3"
+        >
           Properties
         </h2>
-        
+
         {/* Layer Name */}
         <div className="mb-4">
-          <label className="block text-[10px] text-[#999] mb-1" htmlFor="layer-name">Name</label>
+          <label
+            className="block text-[10px] text-[#999] mb-1"
+            htmlFor="layer-name"
+          >
+            Name
+          </label>
           <input
             id="layer-name"
             type="text"
             value={layer.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
-            className="w-full bg-[#383838] border border-[#444444] rounded px-2 py-1 text-xs text-white focus:border-primary outline-none"
+            className="w-full bg-[#383838] border border-[#444444] rounded px-2
+              py-1 text-xs text-white focus:border-primary outline-none"
           />
         </div>
 
@@ -60,12 +75,20 @@ export const LayerProperties: React.FC<LayerPropertiesProps> = ({
 
         {/* Blend Mode */}
         <div className="mb-2">
-          <label className="block text-[10px] text-[#999] mb-1" htmlFor="blend-mode">Blend Mode</label>
+          <label
+            className="block text-[10px] text-[#999] mb-1"
+            htmlFor="blend-mode"
+          >
+            Blend Mode
+          </label>
           <select
             id="blend-mode"
             value={layer.blendMode}
-            onChange={(e) => onUpdate({ blendMode: e.target.value as BlendMode })}
-            className="w-full bg-[#383838] border border-[#444444] rounded px-2 py-1 text-xs text-white focus:border-primary outline-none"
+            onChange={(e) =>
+              onUpdate({ blendMode: e.target.value as BlendMode })
+            }
+            className="w-full bg-[#383838] border border-[#444444] rounded px-2
+              py-1 text-xs text-white focus:border-primary outline-none"
           >
             <option value="normal">Normal</option>
             <option value="multiply">Multiply</option>
@@ -79,13 +102,16 @@ export const LayerProperties: React.FC<LayerPropertiesProps> = ({
       {/* Effect Specific Properties */}
       {template && (
         <div className="p-3 space-y-4">
-          <h3 className="text-[10px] font-bold text-[#999] uppercase tracking-wider">
+          <h3
+            className="text-[10px] font-bold text-[#999] uppercase
+              tracking-wider"
+          >
             Effect Settings
           </h3>
-          
+
           {Object.entries(template.defaultProperties).map(([key, propDef]) => {
             const currentValue = layer.properties[key];
-            
+
             if (propDef.type === "float") {
               return (
                 <SliderControl
@@ -97,6 +123,16 @@ export const LayerProperties: React.FC<LayerPropertiesProps> = ({
                   max={propDef.max || 1}
                   step={propDef.step || 0.01}
                   format={(v) => v.toFixed(2)}
+                  onChange={(v) => onUpdateProperty(key, v)}
+                />
+              );
+            } else if (propDef.type === "vec2") {
+              return (
+                <Vec2Control
+                  key={key}
+                  id={key}
+                  label={propDef.label}
+                  value={currentValue as [number, number]}
                   onChange={(v) => onUpdateProperty(key, v)}
                 />
               );

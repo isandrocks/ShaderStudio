@@ -10,7 +10,7 @@ export const createShaderLoadHandlers = (
   setShaderCode: (code: string) => void,
   setDynamicUniforms: React.Dispatch<React.SetStateAction<DynamicUniform[]>>,
   setShaderError: (error: string) => void,
-  setCriticalError: (error: string | null) => void
+  setCriticalError: (error: string | null) => void,
 ) => {
   const loadPreset = (preset: ShaderPreset) => {
     try {

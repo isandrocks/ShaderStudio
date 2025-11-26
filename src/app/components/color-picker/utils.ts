@@ -53,14 +53,40 @@ export const hsvToRgb = (h: number, s: number, v: number): RGB => {
   const q = v * (1 - f * s);
   const t = v * (1 - (1 - f) * s);
 
-  let r = 0, g = 0, b = 0;
+  let r = 0,
+    g = 0,
+    b = 0;
   switch (i % 6) {
-    case 0: r = v; g = t; b = p; break;
-    case 1: r = q; g = v; b = p; break;
-    case 2: r = p; g = v; b = t; break;
-    case 3: r = p; g = q; b = v; break;
-    case 4: r = t; g = p; b = v; break;
-    case 5: r = v; g = p; b = q; break;
+    case 0:
+      r = v;
+      g = t;
+      b = p;
+      break;
+    case 1:
+      r = q;
+      g = v;
+      b = p;
+      break;
+    case 2:
+      r = p;
+      g = v;
+      b = t;
+      break;
+    case 3:
+      r = p;
+      g = q;
+      b = v;
+      break;
+    case 4:
+      r = t;
+      g = p;
+      b = v;
+      break;
+    case 5:
+      r = v;
+      g = p;
+      b = q;
+      break;
   }
 
   return { r, g, b };
@@ -69,8 +95,11 @@ export const hsvToRgb = (h: number, s: number, v: number): RGB => {
 /**
  * Convert RGB [0-1] value to hex string (00-FF)
  */
-export const toHex = (val: number): string => 
-  Math.round(val * 255).toString(16).padStart(2, '0').toUpperCase();
+export const toHex = (val: number): string =>
+  Math.round(val * 255)
+    .toString(16)
+    .padStart(2, "0")
+    .toUpperCase();
 
 /**
  * Parse hex input and return RGB(A) values [0-1]
@@ -78,28 +107,39 @@ export const toHex = (val: number): string =>
  */
 export const parseHexInput = (
   input: string,
-  currentAlpha: number = 1
+  currentAlpha: number = 1,
 ): { r: number; g: number; b: number; a: number } | null => {
   // Remove # if present and get valid hex characters
-  const cleaned = input.replace(/[^0-9a-fA-F]/g, '');
-  
+  const cleaned = input.replace(/[^0-9a-fA-F]/g, "");
+
   if (cleaned.length === 0) return null;
 
   let hex = cleaned;
-  
+
   // Expand short forms
   if (hex.length === 1) {
     hex = hex.repeat(6);
   } else if (hex.length === 2) {
     hex = hex.repeat(3);
   } else if (hex.length === 3) {
-    hex = hex.split('').map(c => c.repeat(2)).join('');
+    hex = hex
+      .split("")
+      .map((c) => c.repeat(2))
+      .join("");
   } else if (hex.length === 4) {
     // RGBA shorthand
-    hex = hex.split('').map(c => c.repeat(2)).join('');
+    hex = hex
+      .split("")
+      .map((c) => c.repeat(2))
+      .join("");
   } else if (hex.length === 5) {
     // Invalid, but try to handle
-    hex = hex.slice(0, 3).split('').map(c => c.repeat(2)).join('') + hex.slice(3);
+    hex =
+      hex
+        .slice(0, 3)
+        .split("")
+        .map((c) => c.repeat(2))
+        .join("") + hex.slice(3);
   } else if (hex.length > 8) {
     hex = hex.slice(0, 8);
   }
@@ -109,7 +149,7 @@ export const parseHexInput = (
     const r = parseInt(hex.substring(0, 2), 16) / 255;
     const g = parseInt(hex.substring(2, 4), 16) / 255;
     const b = parseInt(hex.substring(4, 6), 16) / 255;
-    
+
     if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
 
     let a = currentAlpha;
@@ -117,7 +157,7 @@ export const parseHexInput = (
       a = parseInt(hex.substring(6, 8), 16) / 255;
       if (isNaN(a)) a = currentAlpha;
     }
-    
+
     return { r, g, b, a };
   }
 
@@ -127,11 +167,16 @@ export const parseHexInput = (
 /**
  * Get RGB string for CSS (0-255 values)
  */
-export const rgbToCssString = (r: number, g: number, b: number): string => 
+export const rgbToCssString = (r: number, g: number, b: number): string =>
   `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
 
 /**
  * Get RGBA string for CSS (0-255 for RGB, 0-1 for alpha)
  */
-export const rgbaToCssString = (r: number, g: number, b: number, a: number): string => 
+export const rgbaToCssString = (
+  r: number,
+  g: number,
+  b: number,
+  a: number,
+): string =>
   `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a.toFixed(2)})`;

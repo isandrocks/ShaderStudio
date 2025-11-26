@@ -19,7 +19,7 @@ export const stripInjectedUniforms = (
       .filter((u) => !u.id.startsWith("base-"))
       .forEach((u) => {
         const pattern = new RegExp(
-          `\\s*uniform\\s+(float|vec3|vec4)\\s+${u.name}\\s*;`,
+          `\\s*uniform\\s+(float|vec2|vec3|vec4)\\s+${u.name}\\s*;`,
           "g",
         );
         result = result.replace(pattern, "");
@@ -51,7 +51,7 @@ export const injectUniforms = (
       .filter((u) => !u.id.startsWith("base-"))
       .filter((u) => {
         const uniformPattern = new RegExp(
-          `uniform\\s+(float|vec3|vec4)\\s+${u.name}\\s*;`,
+          `uniform\\s+(float|vec2|vec3|vec4)\\s+${u.name}\\s*;`,
         );
         return !uniformPattern.test(code);
       });
@@ -221,6 +221,9 @@ export const renderShader = (
     // Call appropriate uniform function based on type
     if (uniformType === "float") {
       gl.uniform1f(location, value as number);
+    } else if (uniformType === "vec2") {
+      const [x, y] = value as [number, number];
+      gl.uniform2f(location, x, y);
     } else if (uniformType === "vec3") {
       const [r, g, b] = value as [number, number, number];
       gl.uniform3f(location, r, g, b);

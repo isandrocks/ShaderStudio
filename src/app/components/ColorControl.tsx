@@ -59,7 +59,7 @@ export const ColorControl: React.FC<ColorControlProps> = ({
 
   // Color strings for display
   const colorPreview = rgbaToCssString(r, g, b, a);
-  
+
   // Show percentage for alpha in vec4
   const alphaPercent = Math.round(a * 100);
 
@@ -79,16 +79,19 @@ export const ColorControl: React.FC<ColorControlProps> = ({
         <div
           ref={buttonRef}
           onClick={() => setShowPicker(!showPicker)}
-          className="flex-1 flex items-center h-[22px] rounded-sm bg-[#383838] border border-[#444444]
-            hover:border-[#8c8c8c] transition-colors"
+          className="flex-1 flex items-center h-[22px] rounded-sm bg-[#383838]
+            border border-[#444444] hover:border-[#8c8c8c] transition-colors"
           style={{ cursor: "default" }}
           title="Click to open color picker"
         >
           {/* Color swatch - left side with border */}
-          <div className="relative flex items-center justify-center border-[#444444] h-5 w-5 shrink-0">
+          <div
+            className="relative flex items-center justify-center
+              border-[#444444] h-5 w-5 shrink-0"
+          >
             {/* Checkerboard background for transparency */}
             {type === "vec4" && a < 1 && (
-              <div 
+              <div
                 className="absolute inset-[3px] rounded-[3px]"
                 style={{
                   backgroundImage: `url('data:image/svg+xml;utf8,<svg width="2" height="2" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1v2h1V1H0" fill-rule="nonzero" fill="%23e1e1e1"/></svg>')`,
@@ -98,7 +101,7 @@ export const ColorControl: React.FC<ColorControlProps> = ({
               />
             )}
             {/* Actual color */}
-            <div 
+            <div
               className="absolute inset-[3px] rounded-[3px]"
               style={{ backgroundColor: colorPreview }}
             />
@@ -108,13 +111,13 @@ export const ColorControl: React.FC<ColorControlProps> = ({
           <div className="h-4 w-px bg-[#2d2d2d] shrink-0" />
 
           {/* Hex value - center (editable) */}
-          <ColorPickerInput 
-            r={r} 
-            g={g} 
-            b={b} 
-            a={a} 
-            type={type} 
-            onChange={onChange} 
+          <ColorPickerInput
+            r={r}
+            g={g}
+            b={b}
+            a={a}
+            type={type}
+            onChange={onChange}
           />
 
           {/* Alpha percentage - right side */}
@@ -132,7 +135,8 @@ export const ColorControl: React.FC<ColorControlProps> = ({
         {onDelete && (
           <button
             onClick={onDelete}
-            className="text-white transition-colors flex items-center justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
+            className="text-white transition-colors flex items-center
+              justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
             title="Delete uniform"
           >
             <MinusIcon />
@@ -150,15 +154,12 @@ export const ColorControl: React.FC<ColorControlProps> = ({
           />
 
           {/* Picker popup - Figma style */}
-          <div
-            className="fixed z-50"
-            style={pickerPosition}
-          >
-            <ColorPicker 
-              value={value} 
-              type={type} 
-              onChange={onChange} 
-              onClose={() => setShowPicker(false)} 
+          <div className="fixed z-50" style={pickerPosition}>
+            <ColorPicker
+              value={value}
+              type={type}
+              onChange={onChange}
+              onClose={() => setShowPicker(false)}
             />
           </div>
         </>

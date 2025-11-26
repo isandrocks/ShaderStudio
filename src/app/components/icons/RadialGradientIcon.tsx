@@ -1,6 +1,8 @@
 import React from "react";
 
-const RadialGradientIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
+const RadialGradientIcon: React.FC<{ className?: string }> = ({
+  className = "w-4 h-4",
+}) => (
   <svg
     width="16"
     height="16"

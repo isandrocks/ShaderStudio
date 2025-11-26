@@ -8,7 +8,13 @@ interface ColorPickerAlphaProps {
   onAlphaChange: (alpha: number) => void;
 }
 
-export const ColorPickerAlpha: React.FC<ColorPickerAlphaProps> = ({ r, g, b, alpha, onAlphaChange }) => {
+export const ColorPickerAlpha: React.FC<ColorPickerAlphaProps> = ({
+  r,
+  g,
+  b,
+  alpha,
+  onAlphaChange,
+}) => {
   const trackRef = useRef<HTMLDivElement>(null);
 
   const updateAlpha = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -56,19 +62,20 @@ export const ColorPickerAlpha: React.FC<ColorPickerAlphaProps> = ({ r, g, b, alp
           `,
           outline: "1px solid rgba(0, 0, 0, 0.1)",
           outlineOffset: "-1px",
-          cursor: "default"
+          cursor: "default",
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
       >
         {/* Thumb */}
         <div
-          className="absolute top-1/2 w-4 h-4 rounded-full border-4 border-white shadow-[0_0_0.5px_rgba(0,0,0,0.18),0_3px_8px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.1)]
+          className="absolute top-1/2 w-4 h-4 rounded-full border-4 border-white
+            shadow-[0_0_0.5px_rgba(0,0,0,0.18),0_3px_8px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.1)]
             pointer-events-none"
           style={{
             left: `${thumbPosition}%`,
             transform: "translate(-50%, -50%)",
-            backgroundColor: thumbColor
+            backgroundColor: thumbColor,
           }}
         />
       </div>

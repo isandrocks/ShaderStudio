@@ -6,10 +6,11 @@
 // Uniform Types
 // ============================================================================
 
-export type UniformType = "float" | "vec3" | "vec4";
+export type UniformType = "float" | "vec2" | "vec3" | "vec4";
 
 export type UniformValue =
   | number // float
+  | [number, number] // vec2
   | [number, number, number] // vec3 (RGB)
   | [number, number, number, number]; // vec4 (RGBA)
 
@@ -103,12 +104,15 @@ export interface EffectTemplate {
   // How to call the function: "myEffect(uv, {prop1}, {prop2})"
   glslCall: string;
   // Default properties for this effect
-  defaultProperties: Record<string, {
-    value: UniformValue;
-    type: UniformType;
-    min?: number;
-    max?: number;
-    step?: number;
-    label: string;
-  }>;
+  defaultProperties: Record<
+    string,
+    {
+      value: UniformValue;
+      type: UniformType;
+      min?: number;
+      max?: number;
+      step?: number;
+      label: string;
+    }
+  >;
 }

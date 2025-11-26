@@ -1,6 +1,11 @@
 import { RefObject } from "react";
 import type { ShaderState, DynamicUniform } from "../types";
-import { renderShader, captureShaderAsImage, recompileShader, buildFragmentSource } from "../webgl";
+import {
+  renderShader,
+  captureShaderAsImage,
+  recompileShader,
+  buildFragmentSource,
+} from "../webgl";
 import { calculateCaptureResolution } from "../utils/shaderUtils";
 
 interface UseShaderEngineParams {
@@ -41,7 +46,6 @@ export const useShaderEngine = ({
   setShaderError,
   setCriticalError,
 }: UseShaderEngineParams): ShaderEngineAPI => {
-  
   const handleShaderError = (error: string | null) => {
     parent.postMessage({ pluginMessage: { type: "shader-error", error } }, "*");
   };
@@ -83,15 +87,15 @@ export const useShaderEngine = ({
     // Temporarily resize canvas for high-quality capture
     const originalWidth = canvas.width;
     const originalHeight = canvas.height;
-    
+
     // Calculate capture resolution with supersampling
-    const { width: captureWidth, height: captureHeight } = calculateCaptureResolution(
-      renderWidth,
-      renderHeight
+    const { width: captureWidth, height: captureHeight } =
+      calculateCaptureResolution(renderWidth, renderHeight);
+
+    console.log(
+      `[captureShader] Target: ${renderWidth}x${renderHeight}, Rendering: ${captureWidth}x${captureHeight}`,
     );
-    
-    console.log(`[captureShader] Target: ${renderWidth}x${renderHeight}, Rendering: ${captureWidth}x${captureHeight}`);
-    
+
     canvas.width = captureWidth;
     canvas.height = captureHeight;
 
@@ -113,7 +117,7 @@ export const useShaderEngine = ({
         if (gl) {
           gl.viewport(0, 0, originalWidth, originalHeight);
         }
-        
+
         parent.postMessage(
           {
             pluginMessage: {
@@ -137,7 +141,10 @@ export const useShaderEngine = ({
 
       setShaderError("");
 
-      const combined = buildFragmentSource(newShaderCode, dynamicUniformsRef.current);
+      const combined = buildFragmentSource(
+        newShaderCode,
+        dynamicUniformsRef.current,
+      );
 
       const success = recompileShader(gl, shaderStateRef, combined, (error) => {
         if (error) {

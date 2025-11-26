@@ -215,8 +215,8 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
               onChange={(e) => setName(e.target.value)}
               maxLength={50}
               className="bg-[#383838] text-white px-3 py-2 rounded border
-                border-[#444444] text-sm focus:outline-none
-                focus:border-primary hover:border-[#8c8c8c] transition-colors"
+                border-[#444444] text-sm focus:outline-none focus:border-primary
+                hover:border-[#8c8c8c] transition-colors"
               placeholder="e.g. My Cool Shader"
             />
             <span className="text-[10px] text-gray-500 mt-1">

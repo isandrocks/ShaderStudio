@@ -24,7 +24,7 @@ export interface VideoExportCallbacks {
 export const createOffscreenCanvas = (
   resolution: number,
   shaderCode: string,
-  dynamicUniforms: DynamicUniform[]
+  dynamicUniforms: DynamicUniform[],
 ): { canvas: HTMLCanvasElement; stateRef: { current: ShaderState } } | null => {
   const offscreenCanvas = document.createElement("canvas");
   offscreenCanvas.width = resolution;
@@ -46,7 +46,7 @@ export const createOffscreenCanvas = (
     shaderToUse,
     (error) => {
       if (error) throw new Error(error);
-    }
+    },
   );
 
   if (!initialized || !offscreenStateRef.current.gl) {
@@ -60,7 +60,7 @@ export const createOffscreenCanvas = (
  * Create a 2D canvas for video encoding
  */
 export const createEncodeCanvas = (
-  resolution: number
+  resolution: number,
 ): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null => {
   const encodeCanvas = document.createElement("canvas");
   encodeCanvas.width = resolution;
@@ -96,7 +96,7 @@ export const getBestVideoMimeType = (): string => {
  */
 export const createVideoRecorder = (
   stream: MediaStream,
-  _fps: number
+  _fps: number,
 ): MediaRecorder => {
   const mimeType = getBestVideoMimeType();
   return new MediaRecorder(stream, {
@@ -113,7 +113,7 @@ export const renderFrame = (
   offscreenState: ShaderState,
   encodeCtx: CanvasRenderingContext2D,
   time: number,
-  dynamicUniforms: DynamicUniform[]
+  dynamicUniforms: DynamicUniform[],
 ): void => {
   renderShader(
     offscreenCanvas,
@@ -123,7 +123,7 @@ export const renderFrame = (
       pausedTime: time,
       dynamicUniforms,
     },
-    time
+    time,
   );
 
   // Copy from WebGL canvas to encode canvas
@@ -143,7 +143,7 @@ export const waitForFrameDelay = (delayMs: number): Promise<void> => {
 export const calculateTotalFrames = (
   duration: number,
   fps: number,
-  playbackMode: "normal" | "bounce"
+  playbackMode: "normal" | "bounce",
 ): number => {
   const baseFrames = duration * fps;
   return playbackMode === "bounce" ? baseFrames * 2 - 2 : baseFrames;
@@ -184,7 +184,7 @@ export const downloadVideo = (blob: Blob, filename: string): void => {
  */
 export const generateVideoFilename = (
   resolution: number,
-  fps: number
+  fps: number,
 ): string => {
   return `shader-${resolution}x${resolution}-${fps}fps-${Date.now()}.webm`;
 };
@@ -196,19 +196,19 @@ export const exportShaderVideo = async (
   options: VideoExportOptions,
   shaderCode: string,
   dynamicUniforms: DynamicUniform[],
-  callbacks?: VideoExportCallbacks
+  callbacks?: VideoExportCallbacks,
 ): Promise<void> => {
   const { duration, fps, playbackMode, resolution } = options;
 
   console.log(
-    `[exportShaderVideo] Starting: ${duration}s at ${fps}fps, ${resolution}×${resolution}`
+    `[exportShaderVideo] Starting: ${duration}s at ${fps}fps, ${resolution}×${resolution}`,
   );
 
   // Create off-screen canvas with WebGL
   const offscreenResult = createOffscreenCanvas(
     resolution,
     shaderCode,
-    dynamicUniforms
+    dynamicUniforms,
   );
   if (!offscreenResult) {
     throw new Error("Failed to create off-screen WebGL context");
@@ -251,7 +251,7 @@ export const exportShaderVideo = async (
       offscreenStateRef.current,
       encodeCtx,
       time,
-      dynamicUniforms
+      dynamicUniforms,
     );
     await waitForFrameDelay(frameDelay);
     callbacks?.onProgress?.(i + 1, totalFrames);
@@ -267,7 +267,7 @@ export const exportShaderVideo = async (
         offscreenStateRef.current,
         encodeCtx,
         time,
-        dynamicUniforms
+        dynamicUniforms,
       );
       await waitForFrameDelay(frameDelay);
       callbacks?.onProgress?.(baseFrames + (baseFrames - i), totalFrames);
@@ -287,9 +287,7 @@ export const exportShaderVideo = async (
   const videoBlob = createVideoBlob(chunks);
   const videoSizeKB = videoBlob.size / 1024;
 
-  console.log(
-    `[exportShaderVideo] Complete: ${videoSizeKB.toFixed(2)} KB`
-  );
+  console.log(`[exportShaderVideo] Complete: ${videoSizeKB.toFixed(2)} KB`);
 
   // Download video
   const filename = generateVideoFilename(resolution, fps);

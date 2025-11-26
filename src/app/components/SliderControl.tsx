@@ -48,7 +48,8 @@ const SliderControl: React.FC<SliderControlProps> = ({
         {onDelete && (
           <button
             onClick={onDelete}
-            className="text-white transition-colors flex items-center justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
+            className="text-white transition-colors flex items-center
+              justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
             title="Delete uniform"
           >
             <MinusIcon />

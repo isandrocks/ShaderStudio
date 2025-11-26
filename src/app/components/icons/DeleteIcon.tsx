@@ -2,17 +2,25 @@ import React from "react";
 
 interface DeleteIconProps {
   className?: string;
+  onClick?: () => void;
+  title?: string;
 }
 
-const DeleteIcon: React.FC<DeleteIconProps> = ({ className = "" }) => {
+const DeleteIcon: React.FC<DeleteIconProps> = ({
+  className = "",
+  onClick,
+  title,
+}) => {
   return (
     <svg
+      onClick={onClick}
       className={`absolute fill-[#a03e3e] pointer-events-auto
         hover:fill-[#c74e4e] ${className}`}
       viewBox="0 0 12.7 12.7"
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"
     >
+      {title && <title>{title}</title>}
       <g>
         <path d="m 1.0588501,2.7770915 c -0.21999777,-3e-6 -0.3980208,0.1789472 -0.396875,0.398942 2.851e-4,0.2189862 0.17788861,0.3963585 0.396875,0.3963583 H 11.6427 C 11.861485,3.572107 12.038773,3.394818 12.039058,3.1760335 12.040203,2.9562407 11.862496,2.7773748 11.6427,2.7770915 Z" />
         <path d="m 5.2911499,0.6619751 c -0.219188,-1e-8 -0.396875,0.17768699 -0.396875,0.396875 2.852e-4,0.2189862 0.1778887,0.3963584 0.396875,0.3963582 H 7.4083333 C 7.6271179,1.4549237 7.8044069,1.2776347 7.8046916,1.0588501 7.8046918,0.83986371 7.6273195,0.6622602 7.4083333,0.6619751 Z" />

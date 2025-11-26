@@ -137,7 +137,8 @@ const ShaderModal: React.FC<ShaderModalProps> = ({
             className="flex-1 px-4 py-2.5 text-[13px] font-medium font-inherit
               border-none rounded-md cursor-pointer transition-all duration-150
               outline-none bg-[#3c3c3c] text-white border border-[#4c4c4c]
-              hover:bg-[#454545] hover:border-[#5c5c5c] active:bg-[#2a2a2a] active:scale-[0.98]"
+              hover:bg-[#454545] hover:border-[#5c5c5c] active:bg-[#2a2a2a]
+              active:scale-[0.98]"
           >
             Discard Changes
           </button>

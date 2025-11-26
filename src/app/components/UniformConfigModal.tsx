@@ -26,6 +26,7 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
   const [max, setMax] = useState(1);
   const [step, setStep] = useState(0.01);
   const [floatValue, setFloatValue] = useState(0.5);
+  const [vec2Value, setVec2Value] = useState<[number, number]>([0.5, 0.5]);
   const [colorValue, setColorValue] = useState<
     [number, number, number] | [number, number, number, number]
   >([0.5, 0.5, 0.5]);
@@ -34,7 +35,13 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
 
   // Compute actual type based on includeAlpha
   const actualType: UniformType =
-    type === "float" ? "float" : includeAlpha ? "vec4" : "vec3";
+    type === "float"
+      ? "float"
+      : type === "vec2"
+        ? "vec2"
+        : includeAlpha
+          ? "vec4"
+          : "vec3";
 
   if (!isOpen) return null;
 
@@ -64,9 +71,11 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
     const value: UniformValue =
       actualType === "float"
         ? floatValue
-        : actualType === "vec3"
-          ? (colorValue as [number, number, number])
-          : (colorValue as [number, number, number, number]);
+        : actualType === "vec2"
+          ? vec2Value
+          : actualType === "vec3"
+            ? (colorValue as [number, number, number])
+            : (colorValue as [number, number, number, number]);
 
     onAdd({ name, type: actualType, value, min, max, step });
 
@@ -77,6 +86,7 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
     setMax(1);
     setStep(0.01);
     setFloatValue(0.5);
+    setVec2Value([0.5, 0.5]);
     setColorValue([0.5, 0.5, 0.5]);
     setIncludeAlpha(false);
     setError("");
@@ -106,8 +116,8 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="bg-[#383838] text-white px-3 py-2 rounded border
-                border-[#444444] text-sm focus:outline-none
-                focus:border-primary hover:border-[#8c8c8c] transition-colors"
+                border-[#444444] text-sm focus:outline-none focus:border-primary
+                hover:border-[#8c8c8c] transition-colors"
               placeholder="e.g. uMyParam"
             />
           </div>
@@ -116,13 +126,16 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
             <label className="text-xs text-gray-300">Type:</label>
             <select
               value={type}
-              onChange={(e) => setType(e.target.value as "float" | "vec3")}
+              onChange={(e) =>
+                setType(e.target.value as "float" | "vec2" | "vec3")
+              }
               className="bg-[#383838] text-white px-3 py-2 rounded border
                 border-[#444444] text-sm focus:outline-none focus:border-primary
                 cursor-pointer hover:border-[#8c8c8c] transition-colors"
               title="Uniform type selector"
             >
               <option value="float">float (slider)</option>
+              <option value="vec2">vec2 (X/Y)</option>
               <option value="vec3">color (RGB/RGBA)</option>
             </select>
           </div>
@@ -138,7 +151,8 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     onChange={(e) => setMin(parseFloat(e.target.value))}
                     className="bg-[#383838] text-white px-3 py-2 rounded border
                       border-[#444444] text-sm focus:outline-none
-                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
+                      focus:border-primary hover:border-[#8c8c8c]
+                      transition-colors"
                     aria-label="Minimum value"
                   />
                 </div>
@@ -150,7 +164,8 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     onChange={(e) => setMax(parseFloat(e.target.value))}
                     className="bg-[#383838] text-white px-3 py-2 rounded border
                       border-[#444444] text-sm focus:outline-none
-                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
+                      focus:border-primary hover:border-[#8c8c8c]
+                      transition-colors"
                     aria-label="Maximum value"
                   />
                 </div>
@@ -165,7 +180,8 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     onChange={(e) => setStep(parseFloat(e.target.value))}
                     className="bg-[#383838] text-white px-3 py-2 rounded border
                       border-[#444444] text-sm focus:outline-none
-                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
+                      focus:border-primary hover:border-[#8c8c8c]
+                      transition-colors"
                     aria-label="Step increment"
                   />
                 </div>
@@ -179,12 +195,48 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     onChange={(e) => setFloatValue(parseFloat(e.target.value))}
                     className="bg-[#383838] text-white px-3 py-2 rounded border
                       border-[#444444] text-sm focus:outline-none
-                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
+                      focus:border-primary hover:border-[#8c8c8c]
+                      transition-colors"
                     aria-label="Initial value"
                   />
                 </div>
               </div>
             </>
+          )}
+
+          {type === "vec2" && (
+            <div className="flex gap-2">
+              <div className="flex flex-col flex-1">
+                <label className="text-xs text-gray-300">X Value:</label>
+                <input
+                  type="number"
+                  value={vec2Value[0]}
+                  onChange={(e) =>
+                    setVec2Value([parseFloat(e.target.value), vec2Value[1]])
+                  }
+                  className="w-full bg-[#383838] text-white px-3 py-2 rounded
+                    border border-[#444444] text-sm focus:outline-none
+                    focus:border-primary hover:border-[#8c8c8c]
+                    transition-colors"
+                  aria-label="X value"
+                />
+              </div>
+              <div className="flex flex-col flex-1">
+                <label className="text-xs text-gray-300">Y Value:</label>
+                <input
+                  type="number"
+                  value={vec2Value[1]}
+                  onChange={(e) =>
+                    setVec2Value([vec2Value[0], parseFloat(e.target.value)])
+                  }
+                  className="w-full bg-[#383838] text-white px-3 py-2 rounded
+                    border border-[#444444] text-sm focus:outline-none
+                    focus:border-primary hover:border-[#8c8c8c]
+                    transition-colors"
+                  aria-label="Y value"
+                />
+              </div>
+            </div>
           )}
 
           {type === "vec3" && (

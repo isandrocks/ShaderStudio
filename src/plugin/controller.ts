@@ -184,49 +184,49 @@ function getSelectionDimensions() {
 
     if (selection.length === 0) {
       // No selection - return default dimensions
-      figma.ui.postMessage({ 
+      figma.ui.postMessage({
         type: "selection-dimensions",
         width: null,
-        height: null
+        height: null,
       });
       return;
     }
 
     if (selection.length === 1) {
       const node = selection[0];
-      
+
       // Check if node has dimensions
       if ("width" in node && "height" in node) {
         const width = Math.round(node.width);
         const height = Math.round(node.height);
-        
-        figma.ui.postMessage({ 
+
+        figma.ui.postMessage({
           type: "selection-dimensions",
           width,
-          height
+          height,
         });
       } else {
         // Node doesn't have dimensions, use default
-        figma.ui.postMessage({ 
+        figma.ui.postMessage({
           type: "selection-dimensions",
           width: null,
-          height: null
+          height: null,
         });
       }
     } else {
       // Multiple selection - use default
-      figma.ui.postMessage({ 
+      figma.ui.postMessage({
         type: "selection-dimensions",
         width: null,
-        height: null
+        height: null,
       });
     }
   } catch (error) {
     console.error("[getSelectionDimensions] Error:", error);
-    figma.ui.postMessage({ 
+    figma.ui.postMessage({
       type: "selection-dimensions",
       width: null,
-      height: null
+      height: null,
     });
   }
 }
@@ -264,24 +264,24 @@ function applyToSelection() {
 
     // Store selected node as current rectangle
     currentRect = node as RectangleNode;
-    
+
     // Get node dimensions for high-quality rendering
     const width = Math.round(currentRect.width);
     const height = Math.round(currentRect.height);
-    
+
     // First, send selection info to show aspect ratio overlay
-    figma.ui.postMessage({ 
+    figma.ui.postMessage({
       type: "selection-info",
       width,
-      height
+      height,
     });
-    
+
     // Wait a moment for user to see the overlay, then render
     setTimeout(() => {
-      figma.ui.postMessage({ 
+      figma.ui.postMessage({
         type: "render-shader",
         width,
-        height
+        height,
       });
     }, 800); // 800ms delay to show overlay
 
@@ -334,20 +334,25 @@ async function applyVideoToSelection(videoData: Uint8Array) {
     const video = await figma.createVideoAsync(videoData);
 
     // Apply video fill to the node
-    node.fills = [{
-      type: "VIDEO",
-      videoHash: video.hash,
-      scaleMode: "FILL"
-    }];
+    node.fills = [
+      {
+        type: "VIDEO",
+        videoHash: video.hash,
+        scaleMode: "FILL",
+      },
+    ];
 
     figma.notify("✓ Video applied successfully!");
   } catch (error) {
     console.error("[applyVideoToSelection] Error:", error);
     const errorMessage = (error as Error).message || "Unknown error";
-    
+
     // Handle common errors
     if (errorMessage.includes("paid")) {
-      figma.notify("Video uploads require a paid Figma plan", { error: true, timeout: 5000 });
+      figma.notify("Video uploads require a paid Figma plan", {
+        error: true,
+        timeout: 5000,
+      });
     } else if (errorMessage.includes("100MB")) {
       figma.notify("Video file must be less than 100MB", { error: true });
     } else {
@@ -367,10 +372,10 @@ function createRectangle() {
     figma.viewport.scrollAndZoomIntoView([rect]);
 
     currentRect = rect;
-    figma.ui.postMessage({ 
+    figma.ui.postMessage({
       type: "render-shader",
       width: 512,
-      height: 512
+      height: 512,
     });
 
     // Timeout fallback

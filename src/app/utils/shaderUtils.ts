@@ -8,7 +8,7 @@ import type { DynamicUniform, UniformType, UniformValue } from "../types";
  * Ensure backward compatibility by defaulting type to 'float' if missing
  */
 export const ensureUniformTypes = (
-  uniforms: DynamicUniform[]
+  uniforms: DynamicUniform[],
 ): DynamicUniform[] => {
   return uniforms.map((u) => ({
     ...u,
@@ -21,7 +21,7 @@ export const ensureUniformTypes = (
  */
 export const generateUniqueUniformName = (
   baseName: string,
-  existingUniforms: DynamicUniform[]
+  existingUniforms: DynamicUniform[],
 ): string => {
   const existingNames = new Set(existingUniforms.map((u) => u.name));
 
@@ -93,7 +93,7 @@ export const calculateCaptureResolution = (
   targetHeight: number,
   supersampleMultiplier: number = 3,
   maxRenderSize: number = 4096,
-  minRenderSize: number = 512
+  minRenderSize: number = 512,
 ): { width: number; height: number } => {
   // Calculate target render size with supersampling
   let captureWidth = targetWidth * supersampleMultiplier;

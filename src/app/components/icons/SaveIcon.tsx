@@ -4,9 +4,7 @@ interface SaveIconProps {
   className?: string;
 }
 
-const SaveIcon: React.FC<SaveIconProps> = ({
-  className = "w-4 h-4",
-}) => {
+const SaveIcon: React.FC<SaveIconProps> = ({ className = "w-4 h-4" }) => {
   return (
     <svg
       viewBox="0 0 12.7 12.7"

@@ -1,6 +1,8 @@
 import React from "react";
 
-const OverlayIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
+const OverlayIcon: React.FC<{ className?: string }> = ({
+  className = "w-4 h-4",
+}) => (
   <svg
     width="16"
     height="16"

@@ -1,6 +1,7 @@
 import React from "react";
 import SliderControl from "./SliderControl";
 import { ColorControl } from "./ColorControl";
+import { Vec2Control } from "./Vec2Control";
 import PlusIcon from "./icons/PlusIcon";
 import SaveIcon from "./icons/SaveIcon";
 import ChevronDownIcon from "./icons/ChevronDownIcon";
@@ -79,57 +80,77 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Header with Add Button */}
       <div className="flex items-center justify-between p-3 pb-2 shrink-0">
         <span className="text-xs font-medium text-gray-300">Parameters</span>
-        <PlusIcon onClick={onAddUniform} title="Add a controllable variable to shader" />
+        <PlusIcon
+          onClick={onAddUniform}
+          title="Add a controllable variable to shader"
+        />
       </div>
 
       {/* Scrollable Dynamic Uniforms */}
       <div className="flex-1 overflow-y-auto px-3 pb-2 flex flex-col gap-1">
-      {dynamicUniforms.map((u) => {
-        const uniformType = u.type || "float";
+        {dynamicUniforms.map((u) => {
+          const uniformType = u.type || "float";
 
-        // Render appropriate control based on type
-        if (uniformType === "float") {
-          const decimals = u.step >= 1 ? 0 : u.step >= 0.1 ? 1 : 2;
-          return (
-            <SliderControl
-              key={u.id}
-              id={u.id}
-              label={`${u.name}:`}
-              value={u.value as number}
-              min={u.min}
-              max={u.max}
-              step={u.step}
-              format={(v) => v.toFixed(decimals)}
-              onChange={(value) => onUpdateUniform(u.id, value)}
-              onDelete={() => onRemoveUniform(u.id)}
-            />
-          );
-        } else if (uniformType === "vec3" || uniformType === "vec4") {
-          return (
-            <ColorControl
-              key={u.id}
-              id={u.id}
-              label={`${u.name}:`}
-              value={
-                u.value as
-                  | [number, number, number]
-                  | [number, number, number, number]
-              }
-              type={uniformType}
-              onChange={(value) => onUpdateUniform(u.id, value)}
-              onDelete={() => onRemoveUniform(u.id)}
-            />
-          );
-        }
-        return null;
-      })}
+          // Render appropriate control based on type
+          if (uniformType === "float") {
+            const decimals = u.step >= 1 ? 0 : u.step >= 0.1 ? 1 : 2;
+            return (
+              <SliderControl
+                key={u.id}
+                id={u.id}
+                label={`${u.name}:`}
+                value={u.value as number}
+                min={u.min}
+                max={u.max}
+                step={u.step}
+                format={(v) => v.toFixed(decimals)}
+                onChange={(value) => onUpdateUniform(u.id, value)}
+                onDelete={() => onRemoveUniform(u.id)}
+              />
+            );
+          } else if (uniformType === "vec2") {
+            return (
+              <Vec2Control
+                key={u.id}
+                id={u.id}
+                label={`${u.name}:`}
+                value={u.value as [number, number]}
+                onChange={(value) => onUpdateUniform(u.id, value)}
+                onDelete={() => onRemoveUniform(u.id)}
+              />
+            );
+          } else if (uniformType === "vec3" || uniformType === "vec4") {
+            return (
+              <ColorControl
+                key={u.id}
+                id={u.id}
+                label={`${u.name}:`}
+                value={
+                  u.value as
+                    | [number, number, number]
+                    | [number, number, number, number]
+                }
+                type={uniformType}
+                onChange={(value) => onUpdateUniform(u.id, value)}
+                onDelete={() => onRemoveUniform(u.id)}
+              />
+            );
+          }
+          return null;
+        })}
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-2 pb-3 px-3 flex flex-col gap-3 shrink-0 border-t border-[#3c3c3c]">
+      <div
+        className="pt-2 pb-3 px-3 flex flex-col gap-3 shrink-0 border-t
+          border-[#3c3c3c]"
+      >
         {/* Selection Error */}
         {selectionError && (
-          <div className="text-xs text-red-400 bg-red-900/20 border border-red-800 rounded px-2 py-1.5">
+          <div
+            className="text-xs text-red-400 bg-red-900/20 border border-red-800
+              rounded px-2 py-1.5"
+          >
             {selectionError}
           </div>
         )}
@@ -152,8 +173,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 aria-label="Show apply options"
                 className="w-7 h-7 flex items-center justify-center text-white
                   bg-primary rounded-r-md cursor-pointer transition-all
-                  duration-150 outline-none border-none border-l border-primary-active
-                  hover:bg-primary-hover active:bg-primary-active"
+                  duration-150 outline-none border-none border-l
+                  border-primary-active hover:bg-primary-hover
+                  active:bg-primary-active"
               >
                 <ChevronDownIcon />
               </button>
@@ -162,8 +184,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* Apply Dropdown Menu */}
             {isApplyDropdownOpen && (
               <div
-                className="absolute bottom-full mb-1 left-0 right-0 z-10 bg-[#3c3c3c]
-                  border border-[#4c4c4c] rounded-sm overflow-hidden shadow-lg"
+                className="absolute bottom-full mb-1 left-0 right-0 z-10
+                  bg-[#3c3c3c] border border-[#4c4c4c] rounded-sm
+                  overflow-hidden shadow-lg"
               >
                 <button
                   onClick={handleCreateRectangleClick}
@@ -194,11 +217,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
           <button
             onClick={onSaveShader}
-            className="w-9 h-7 flex items-center justify-center
-              bg-[#3c3c3c] text-gray-300 rounded-md cursor-pointer
-              transition-all duration-150 outline-none border
-              border-[#4c4c4c] hover:bg-[#454545]
-              hover:border-[#5c5c5c] active:bg-[#2a2a2a]
+            className="w-9 h-7 flex items-center justify-center bg-[#3c3c3c]
+              text-gray-300 rounded-md cursor-pointer transition-all
+              duration-150 outline-none border border-[#4c4c4c]
+              hover:bg-[#454545] hover:border-[#5c5c5c] active:bg-[#2a2a2a]
               active:scale-[0.98]"
             title="Save shader to Design"
           >
@@ -214,8 +236,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               className="flex-1 h-7 px-3 text-xs font-medium bg-[#3c3c3c]
                 text-gray-300 rounded-l-md cursor-pointer transition-all
                 duration-150 outline-none border border-[#4c4c4c]
-                hover:bg-[#454545] hover:border-[#5c5c5c]
-                flex items-center justify-center gap-2"
+                hover:bg-[#454545] hover:border-[#5c5c5c] flex items-center
+                justify-center gap-2"
             >
               <EditIcon className="w-3.5 h-3.5" />
               <span>Advanced Editor</span>
@@ -235,15 +257,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           {/* Dropdown Menu */}
           {isDropdownOpen && (
             <div
-              className="absolute bottom-full mb-1 left-0 right-0 z-10 bg-[#3c3c3c]
-                border border-[#4c4c4c] rounded-sm overflow-hidden shadow-lg"
+              className="absolute bottom-full mb-1 left-0 right-0 z-10
+                bg-[#3c3c3c] border border-[#4c4c4c] rounded-sm overflow-hidden
+                shadow-lg"
             >
               <button
                 onClick={handlePresetClick}
                 className="w-full h-7 px-3 text-xs font-medium text-left
                   bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
-                  duration-150 outline-none border-none hover:bg-[#454545]
-                  flex items-center gap-2"
+                  duration-150 outline-none border-none hover:bg-[#454545] flex
+                  items-center gap-2"
               >
                 <PaletteIcon className="w-3.5 h-3.5" />
                 <span>Load Preset</span>
@@ -252,8 +275,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 onClick={handleMyShadersClick}
                 className="w-full h-7 px-3 text-xs font-medium text-left
                   bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
-                  duration-150 outline-none border-none hover:bg-[#454545]
-                  flex items-center gap-2"
+                  duration-150 outline-none border-none hover:bg-[#454545] flex
+                  items-center gap-2"
               >
                 <FolderIcon className="w-3.5 h-3.5" />
                 <span>My Shaders</span>
@@ -265,10 +288,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <button
           onClick={onToggleBuilderMode}
           className="w-full h-7 px-3 text-xs font-medium bg-[#3c3c3c]
-            text-gray-300 rounded-md cursor-pointer transition-all
-            duration-150 outline-none border border-[#4c4c4c]
-            hover:bg-[#454545] hover:border-[#5c5c5c]
-            flex items-center justify-center gap-2"
+            text-gray-300 rounded-md cursor-pointer transition-all duration-150
+            outline-none border border-[#4c4c4c] hover:bg-[#454545]
+            hover:border-[#5c5c5c] flex items-center justify-center gap-2"
         >
           <LayersIcon className="w-3.5 h-3.5" />
           <span>Visual Builder</span>

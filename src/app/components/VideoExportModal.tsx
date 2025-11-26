@@ -4,7 +4,11 @@ import { BaseModal } from "./BaseModal";
 interface VideoExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (duration: number, playbackMode: "normal" | "bounce", fps: number) => void;
+  onExport: (
+    duration: number,
+    playbackMode: "normal" | "bounce",
+    fps: number,
+  ) => void;
 }
 
 const VideoExportModal: React.FC<VideoExportModalProps> = ({
@@ -13,7 +17,9 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
   onExport,
 }) => {
   const [duration, setDuration] = useState(5);
-  const [playbackMode, setPlaybackMode] = useState<"normal" | "bounce">("normal");
+  const [playbackMode, setPlaybackMode] = useState<"normal" | "bounce">(
+    "normal",
+  );
   const [fps, setFps] = useState(30);
 
   const handleExport = () => {
@@ -47,13 +53,17 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
 
         {/* Resolution Info */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-300">Resolution</label>
+          <label className="text-sm font-medium text-gray-300">
+            Resolution
+          </label>
           <div className="text-sm text-gray-400">1080×1080 (Square)</div>
         </div>
 
         {/* FPS Selector */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-300">Frame Rate</label>
+          <label className="text-sm font-medium text-gray-300">
+            Frame Rate
+          </label>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -106,7 +116,9 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
                 onChange={() => setPlaybackMode("bounce")}
                 className="accent-primary"
               />
-              <span className="text-sm text-gray-300">Bounce (forward then reverse)</span>
+              <span className="text-sm text-gray-300">
+                Bounce (forward then reverse)
+              </span>
             </label>
           </div>
         </div>
@@ -115,10 +127,10 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleExport}
-            className="flex-1 h-8 px-4 text-sm font-medium bg-primary
-              text-white rounded-md cursor-pointer transition-all
-              duration-150 outline-none border-none hover:bg-primary-hover
-              active:bg-primary-active active:scale-[0.98]"
+            className="flex-1 h-8 px-4 text-sm font-medium bg-primary text-white
+              rounded-md cursor-pointer transition-all duration-150 outline-none
+              border-none hover:bg-primary-hover active:bg-primary-active
+              active:scale-[0.98]"
           >
             Export Video
           </button>
@@ -127,8 +139,8 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
             className="flex-1 h-8 px-4 text-sm font-medium bg-[#3c3c3c]
               text-gray-300 rounded-md cursor-pointer transition-all
               duration-150 outline-none border border-[#4c4c4c]
-              hover:bg-[#454545] hover:border-[#5c5c5c]
-              active:bg-[#2a2a2a] active:scale-[0.98]"
+              hover:bg-[#454545] hover:border-[#5c5c5c] active:bg-[#2a2a2a]
+              active:scale-[0.98]"
           >
             Cancel
           </button>

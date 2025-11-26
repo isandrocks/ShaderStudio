@@ -3,9 +3,11 @@ import { RefObject } from "react";
 export const createFigmaHandlers = (
   startTimeRef: RefObject<number>,
   paramsRef: RefObject<{ paused: boolean; pausedTime: number }>,
-  setParams: React.Dispatch<React.SetStateAction<{ paused: boolean; pausedTime: number }>>,
+  setParams: React.Dispatch<
+    React.SetStateAction<{ paused: boolean; pausedTime: number }>
+  >,
   setSelectionError: (error: string) => void,
-  setShowAspectRatio: (show: boolean) => void
+  setShowAspectRatio: (show: boolean) => void,
 ) => {
   const handlePauseChange = (checked: boolean) => {
     if (checked) {
@@ -36,7 +38,10 @@ export const createFigmaHandlers = (
 
   const handleToggleOverlay = () => {
     // Request current selection dimensions from Figma
-    parent.postMessage({ pluginMessage: { type: "get-selection-dimensions" } }, "*");
+    parent.postMessage(
+      { pluginMessage: { type: "get-selection-dimensions" } },
+      "*",
+    );
   };
 
   return {

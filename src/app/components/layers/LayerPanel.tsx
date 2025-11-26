@@ -29,9 +29,17 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
   onToggleCodeMode,
 }) => {
   return (
-    <div className="flex flex-col h-full w-52 bg-[#1e1e1e] border-r border-[#3c3c3c]">
-      <div className="p-3 border-b border-[#3c3c3c] flex justify-between items-center">
-        <h2 className="text-xs font-bold text-white uppercase tracking-wider">Layers</h2>
+    <div
+      className="flex flex-col h-full w-52 bg-[#1e1e1e] border-r
+        border-[#3c3c3c]"
+    >
+      <div
+        className="p-3 border-b border-[#3c3c3c] flex justify-between
+          items-center"
+      >
+        <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+          Layers
+        </h2>
         <button
           onClick={onAdd}
           className="p-1 hover:bg-[#3c3c3c] rounded text-white"
@@ -47,7 +55,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
             No layers. Click + to add one.
           </div>
         )}
-        
+
         {/* Render in reverse order so top layer is at top of list */}
         {[...layers].reverse().map((layer, reverseIndex) => {
           const index = layers.length - 1 - reverseIndex;
@@ -56,22 +64,27 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
           return (
             <div
               key={layer.id}
-              className={`
-                group flex items-center p-2 rounded cursor-pointer select-none
-                ${isSelected ? "bg-primary text-white" : "hover:bg-[#2a2a2a] text-[#e0e0e0]"}
+              className={` group flex items-center p-2 rounded cursor-pointer
+              select-none
+              ${isSelected ? "bg-primary text-white" : "hover:bg-[#2a2a2a] text-[#e0e0e0]"}
               `}
               onClick={() => onSelect(layer.id)}
             >
               {/* Visibility Toggle */}
               <button
-                className={`mr-2 text-xs ${layer.visible ? "opacity-100" : "opacity-30"}`}
+                className={`mr-2 text-xs
+                ${layer.visible ? "opacity-100" : "opacity-30"}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleVisibility(layer.id);
                 }}
                 title={layer.visible ? "Hide Layer" : "Show Layer"}
               >
-                {layer.visible ? <EyeIcon className="w-3 h-3" /> : <EyeOffIcon className="w-3 h-3" />}
+                {layer.visible ? (
+                  <EyeIcon className="w-3 h-3" />
+                ) : (
+                  <EyeOffIcon className="w-3 h-3" />
+                )}
               </button>
 
               {/* Layer Name */}
@@ -80,14 +93,18 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
               </div>
 
               {/* Actions (visible on hover or selected) */}
-              <div className={`flex items-center gap-1 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+              <div
+                className={`flex items-center gap-1
+                ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+              >
                 {/* Simple Reorder Buttons */}
                 <div className="flex flex-col mr-1">
                   <button
                     className="text-[8px] leading-none hover:text-white"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (index < layers.length - 1) onReorder(index, index + 1);
+                      if (index < layers.length - 1)
+                        onReorder(index, index + 1);
                     }}
                     disabled={index === layers.length - 1}
                     title="Move Up"
@@ -108,14 +125,15 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
                 </div>
 
                 <button
-                  className="p-1 hover:bg-black/20 rounded w-4 h-4 flex items-center justify-center"
+                  className="p-1 hover:bg-black/20 rounded w-4 h-4 flex
+                    items-center justify-center"
                   onClick={(e) => {
                     e.stopPropagation();
                     onRemove(layer.id);
                   }}
                   title="Delete Layer"
                 >
-                  <DeleteIcon className="w-4 h-4 fill-white"/>
+                  <DeleteIcon className="w-4 h-4 fill-white" />
                 </button>
               </div>
             </div>
@@ -126,7 +144,9 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
       <div className="p-3 border-t border-[#3c3c3c]">
         <button
           onClick={onToggleCodeMode}
-          className="w-full h-7 px-3 text-xs font-medium bg-[#3c3c3c] text-gray-300 rounded cursor-pointer hover:bg-[#454545] flex items-center justify-center gap-2"
+          className="w-full h-7 px-3 text-xs font-medium bg-[#3c3c3c]
+            text-gray-300 rounded cursor-pointer hover:bg-[#454545] flex
+            items-center justify-center gap-2"
         >
           <CodeIcon className="w-3.5 h-3.5" />
           <span>Switch to Code Mode</span>

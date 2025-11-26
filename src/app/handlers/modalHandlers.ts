@@ -10,7 +10,7 @@ export const createModalHandlers = (
   modalShaderSnapshotRef: RefObject<string | null>,
   handleRecompileShader: (newShaderCode: string) => boolean,
   setShaderCode: (code: string) => void,
-  setShaderError: (error: string) => void
+  setShaderError: (error: string) => void,
 ) => {
   const handleApplyShader = () => {
     try {
@@ -32,7 +32,8 @@ export const createModalHandlers = (
 
   const handleResetShader = () => {
     // Reset to the shader state when modal was opened, or default preset if no snapshot
-    const resetShader = modalShaderSnapshotRef.current || SHADER_PRESETS[0].fragmentShader;
+    const resetShader =
+      modalShaderSnapshotRef.current || SHADER_PRESETS[0].fragmentShader;
     setShaderCode(resetShader);
     // Only clear custom ref if resetting to default preset
     if (!modalShaderSnapshotRef.current) {

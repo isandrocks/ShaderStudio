@@ -1,11 +1,14 @@
 import type { DynamicUniform, UniformType, UniformValue } from "../types";
-import { generateUniqueUniformName, createDynamicUniform } from "../utils/shaderUtils";
+import {
+  generateUniqueUniformName,
+  createDynamicUniform,
+} from "../utils/shaderUtils";
 
 export const createUniformHandlers = (
   dynamicUniforms: DynamicUniform[],
   setDynamicUniforms: React.Dispatch<React.SetStateAction<DynamicUniform[]>>,
   setOpenModal: (modal: "none") => void,
-  setCriticalError: (error: string | null) => void
+  setCriticalError: (error: string | null) => void,
 ) => {
   const addUniform = (config: {
     name: string;
@@ -16,12 +19,15 @@ export const createUniformHandlers = (
     step: number;
   }) => {
     try {
-      const uniqueName = generateUniqueUniformName(config.name, dynamicUniforms);
+      const uniqueName = generateUniqueUniformName(
+        config.name,
+        dynamicUniforms,
+      );
       const newUniform = createDynamicUniform({
         ...config,
         name: uniqueName,
       });
-      
+
       setDynamicUniforms((prev) => [...prev, newUniform]);
       setOpenModal("none");
     } catch (error) {
