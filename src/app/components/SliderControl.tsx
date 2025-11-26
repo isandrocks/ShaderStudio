@@ -1,5 +1,5 @@
 import React from "react";
-import DeleteIcon from "./DeleteIcon";
+import MinusIcon from "./MinusIcon";
 
 interface SliderControlProps {
   id: string;
@@ -27,14 +27,14 @@ const SliderControl: React.FC<SliderControlProps> = ({
     <div className="flex flex-col gap-2">
       <label
         className="flex justify-between items-center text-xs font-normal
-          text-gray-200"
+          text-gray-300"
       >
         <span>{label}</span>
         <span className="text-primary font-bold min-w-10 text-right pl-[18px]">
           {format(value)}
         </span>
       </label>
-      <div className="relative w-[90%]">
+      <div className="flex items-center gap-2">
         <input
           type="range"
           min={min}
@@ -43,13 +43,17 @@ const SliderControl: React.FC<SliderControlProps> = ({
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           title={label}
-          className="slider-input"
+          className="slider-input flex-1"
         />
-        {onDelete ? (
-          <span onClick={onDelete} role="button" aria-label={`Delete ${label}`}>
-            <DeleteIcon className="h-3 w-3 cursor-pointer -top-1 -right-4" />
-          </span>
-        ) : null}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="text-white transition-colors flex items-center justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
+            title="Delete uniform"
+          >
+            <MinusIcon />
+          </button>
+        )}
       </div>
     </div>
   );

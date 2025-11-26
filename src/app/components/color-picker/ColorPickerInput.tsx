@@ -83,7 +83,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({ r, g, b, a, 
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         onClick={(e) => e.stopPropagation()}
-        className="flex-1 px-2 text-xs font-normal text-white text-center bg-transparent outline-none"
+        className="flex-1 w-full min-w-0 px-2 text-xs font-normal text-white text-left bg-transparent outline-none"
         style={{ cursor: "text" }}
         maxLength={8}
         spellCheck={false}
@@ -95,7 +95,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({ r, g, b, a, 
 
   return (
     <div 
-      className="flex-1 px-2 text-xs font-normal text-white text-center select-none"
+      className="flex-1 px-2 text-xs font-normal text-white text-left select-none"
       onClick={handleClick}
     >
       {hexValue}

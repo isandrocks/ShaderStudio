@@ -240,18 +240,18 @@ import { Button } from '@figma-kit/components/button';
 ```css
 height: var(--space-6);               /* 24px */
 padding: var(--space-1) 0 var(--space-1) var(--space-2);
-background-color: var(--figma-color-bg-secondary);
+background-color: #383838;            /* Darker input background */
+border: 1px solid #444444;            /* Subtle border */
 border-radius: var(--radius-medium);
-outline-offset: -1px;
-outline: 1px solid transparent;
+outline: none;
 
 /* States */
 &:hover:not(:disabled, :focus) {
-  outline-color: var(--figma-color-border);
+  border-color: #8c8c8c;
 }
 
 &:focus {
-  outline-color: var(--figma-color-border-selected);
+  border-color: var(--figma-color-border-selected);
 }
 
 &::placeholder {

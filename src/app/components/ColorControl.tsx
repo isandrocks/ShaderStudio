@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import DeleteIcon from "./DeleteIcon";
+import MinusIcon from "./MinusIcon";
 import { ColorPicker } from "./color-picker/ColorPicker";
 import { ColorPickerInput } from "./color-picker/ColorPickerInput";
 import { rgbaToCssString } from "./color-picker/utils";
@@ -64,7 +64,7 @@ export const ColorControl: React.FC<ColorControlProps> = ({
   const alphaPercent = Math.round(a * 100);
 
   return (
-    <div className="mb-1 relative">
+    <div className="mb-1 relative group">
       <div className="mb-1 flex items-center justify-between">
         <label
           htmlFor={id}
@@ -72,68 +72,71 @@ export const ColorControl: React.FC<ColorControlProps> = ({
         >
           {label}
         </label>
+      </div>
+
+      <div className="flex items-center gap-2 justify-between">
+        {/* Value field container - Figma style */}
+        <div
+          ref={buttonRef}
+          onClick={() => setShowPicker(!showPicker)}
+          className="flex-1 flex items-center h-[22px] rounded-sm bg-[#383838] border border-[#444444]
+            hover:border-[#8c8c8c] transition-colors"
+          style={{ cursor: "default" }}
+          title="Click to open color picker"
+        >
+          {/* Color swatch - left side with border */}
+          <div className="relative flex items-center justify-center border-[#444444] h-5 w-5 shrink-0">
+            {/* Checkerboard background for transparency */}
+            {type === "vec4" && a < 1 && (
+              <div 
+                className="absolute inset-[3px] rounded-[3px]"
+                style={{
+                  backgroundImage: `url('data:image/svg+xml;utf8,<svg width="2" height="2" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1v2h1V1H0" fill-rule="nonzero" fill="%23e1e1e1"/></svg>')`,
+                  backgroundSize: "4px 4px",
+                  backgroundColor: "#fff",
+                }}
+              />
+            )}
+            {/* Actual color */}
+            <div 
+              className="absolute inset-[3px] rounded-[3px]"
+              style={{ backgroundColor: colorPreview }}
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="h-4 w-px bg-[#2d2d2d] shrink-0" />
+
+          {/* Hex value - center (editable) */}
+          <ColorPickerInput 
+            r={r} 
+            g={g} 
+            b={b} 
+            a={a} 
+            type={type} 
+            onChange={onChange} 
+          />
+
+          {/* Alpha percentage - right side */}
+          <div className="h-4 w-px bg-[#2d2d2d] shrink-0" />
+          <div
+            className={`w-11 px-2 text-xs font-normal text-left select-none ${
+              type === "vec3" ? "text-[#666666]" : "text-[#b3b3b3]"
+            }`}
+          >
+            {type === "vec3" ? "100%" : `${alphaPercent}%`}
+          </div>
+        </div>
+
+        {/* Delete Button */}
         {onDelete && (
           <button
             onClick={onDelete}
-            className="text-gray-400 hover:text-red-400 transition-colors"
+            className="text-white transition-colors flex items-center justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
             title="Delete uniform"
-            style={{ cursor: "default" }}
           >
-            <DeleteIcon className="h-3 w-3" />
+            <MinusIcon />
           </button>
-        )}
-      </div>
-
-      {/* Value field container - Figma style */}
-      <div
-        ref={buttonRef}
-        onClick={() => setShowPicker(!showPicker)}
-        className="flex items-center h-6 rounded-sm bg-[#373737] outline-1 -outline-offset-1 outline-transparent
-          hover:outline-[#8c8c8c] transition-colors"
-        style={{ cursor: "default" }}
-        title="Click to open color picker"
-      >
-        {/* Color swatch - left side with border */}
-        <div className="relative flex items-center justify-center h-6 w-6 shrink-0">
-          {/* Checkerboard background for transparency */}
-          {type === "vec4" && a < 1 && (
-            <div 
-              className="absolute inset-[3px] rounded-[3px]"
-              style={{
-                backgroundImage: `url('data:image/svg+xml;utf8,<svg width="2" height="2" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1v2h1V1H0" fill-rule="nonzero" fill="%23e1e1e1"/></svg>')`,
-                backgroundSize: "4px 4px",
-                backgroundColor: "#fff",
-              }}
-            />
-          )}
-          {/* Actual color */}
-          <div 
-            className="absolute inset-[3px] rounded-[3px]"
-            style={{ backgroundColor: colorPreview }}
-          />
-        </div>
-
-        {/* Divider */}
-        <div className="h-4 w-px bg-[#2d2d2d] shrink-0" />
-
-        {/* Hex value - center (editable) */}
-        <ColorPickerInput 
-          r={r} 
-          g={g} 
-          b={b} 
-          a={a} 
-          type={type} 
-          onChange={onChange} 
-        />
-
-        {/* Alpha percentage for vec4 - right side */}
-        {type === "vec4" && (
-          <>
-            <div className="h-4 w-px bg-[#1e1e1e] shrink-0" />
-            <div className="w-11 px-2 text-xs font-normal text-[#b3b3b3] text-center select-none">
-              {alphaPercent}%
-            </div>
-          </>
         )}
       </div>
 

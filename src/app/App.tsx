@@ -7,6 +7,7 @@ import { PresetGallery } from "./components/PresetGallery";
 import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
 import { VideoExportModal } from "./components/video-export";
+import HelpIcon from "./components/HelpIcon";
 import { SHADER_PRESETS } from "./presets";
 import { useSyncedRef, useShaderEngine, useShaderLifecycle } from "./hooks";
 import {
@@ -36,6 +37,7 @@ const App: React.FC = () => {
   const [openModal, setOpenModal] = useState<ModalType>("none");
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [isExportingVideo, setIsExportingVideo] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // State: shaders
   const [savedShaders, setSavedShaders] = useState<SavedShader[]>([]);
@@ -224,6 +226,35 @@ const App: React.FC = () => {
       <p className="text-[11px] text-[#999999] text-center max-w-lg absolute bottom-4">
         Live shader preview above • Adjust parameters in real-time
       </p>
+
+      {/* Help Icon & Tooltip */}
+      <div className="absolute bottom-4 left-4 z-10">
+        <div
+          className="text-[#999999] hover:text-white cursor-pointer transition-colors"
+          onMouseEnter={() => setShowHelp(true)}
+          onMouseLeave={() => setShowHelp(false)}
+        >
+          <HelpIcon className="w-5 h-5" />
+        </div>
+
+        {showHelp && (
+          <div className="absolute bottom-8 left-0 w-64 bg-[#2c2c2c] border border-[#3c3c3c] rounded-lg p-3 shadow-xl text-xs text-gray-300">
+            <h4 className="font-bold text-white mb-2">Using Parameters</h4>
+            <ol className="list-decimal pl-4 space-y-1">
+              <li>Add a parameter using the + button</li>
+              <li>Open Advanced Editor</li>
+              <li>
+                Declare the uniform in your code (e.g.{" "}
+                <code className="bg-[#1e1e1e] px-1 rounded">
+                  uniform float myParam;
+                </code>
+                )
+              </li>
+              <li>Control the value from the main panel</li>
+            </ol>
+          </div>
+        )}
+      </div>
 
       <ShaderModal
         isOpen={openModal === "shader"}

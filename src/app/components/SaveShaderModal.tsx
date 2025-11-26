@@ -214,9 +214,9 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={50}
-              className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                border-[#3c3c3c] text-sm focus:outline-none
-                focus:border-primary"
+              className="bg-[#383838] text-white px-3 py-2 rounded border
+                border-[#444444] text-sm focus:outline-none
+                focus:border-primary hover:border-[#8c8c8c] transition-colors"
               placeholder="e.g. My Cool Shader"
             />
             <span className="text-[10px] text-gray-500 mt-1">
@@ -233,9 +233,9 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               maxLength={200}
               rows={3}
-              className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                border-[#3c3c3c] text-sm focus:outline-none focus:border-primary
-                resize-none"
+              className="bg-[#383838] text-white px-3 py-2 rounded border
+                border-[#444444] text-sm focus:outline-none focus:border-primary
+                resize-none hover:border-[#8c8c8c] transition-colors"
               placeholder="Describe your shader..."
             />
             <span className="text-[10px] text-gray-500 mt-1">

@@ -25,6 +25,7 @@ Communication flows via `postMessage` between the two contexts:
 ### Design System
 The UI follows **Figma's dark theme** design patterns:
 - Dark backgrounds (#1e1e1e, #2a2a2a)
+- Input fields: `bg-[#383838] border border-[#444444]`
 - Primary blue (#0d99ff) for interactive elements
 - Subtle borders (#3c3c3c)
 - High contrast text (white/gray-300)

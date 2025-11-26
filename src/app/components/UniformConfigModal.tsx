@@ -105,9 +105,9 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                border-[#3c3c3c] text-sm focus:outline-none
-                focus:border-primary"
+              className="bg-[#383838] text-white px-3 py-2 rounded border
+                border-[#444444] text-sm focus:outline-none
+                focus:border-primary hover:border-[#8c8c8c] transition-colors"
               placeholder="e.g. uMyParam"
             />
           </div>
@@ -117,9 +117,9 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
             <select
               value={type}
               onChange={(e) => setType(e.target.value as "float" | "vec3")}
-              className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                border-[#3c3c3c] text-sm focus:outline-none focus:border-primary
-                cursor-pointer"
+              className="bg-[#383838] text-white px-3 py-2 rounded border
+                border-[#444444] text-sm focus:outline-none focus:border-primary
+                cursor-pointer hover:border-[#8c8c8c] transition-colors"
               title="Uniform type selector"
             >
               <option value="float">float (slider)</option>
@@ -136,9 +136,9 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     type="number"
                     value={min}
                     onChange={(e) => setMin(parseFloat(e.target.value))}
-                    className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                      border-[#3c3c3c] text-sm focus:outline-none
-                      focus:border-primary"
+                    className="bg-[#383838] text-white px-3 py-2 rounded border
+                      border-[#444444] text-sm focus:outline-none
+                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
                     aria-label="Minimum value"
                   />
                 </div>
@@ -148,9 +148,9 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     type="number"
                     value={max}
                     onChange={(e) => setMax(parseFloat(e.target.value))}
-                    className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                      border-[#3c3c3c] text-sm focus:outline-none
-                      focus:border-primary"
+                    className="bg-[#383838] text-white px-3 py-2 rounded border
+                      border-[#444444] text-sm focus:outline-none
+                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
                     aria-label="Maximum value"
                   />
                 </div>
@@ -163,9 +163,9 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     type="number"
                     value={step}
                     onChange={(e) => setStep(parseFloat(e.target.value))}
-                    className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                      border-[#3c3c3c] text-sm focus:outline-none
-                      focus:border-primary"
+                    className="bg-[#383838] text-white px-3 py-2 rounded border
+                      border-[#444444] text-sm focus:outline-none
+                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
                     aria-label="Step increment"
                   />
                 </div>
@@ -177,9 +177,9 @@ const UniformConfigModal: React.FC<UniformConfigModalProps> = ({
                     type="number"
                     value={floatValue}
                     onChange={(e) => setFloatValue(parseFloat(e.target.value))}
-                    className="bg-[#1e1e1e] text-white px-3 py-2 rounded border
-                      border-[#3c3c3c] text-sm focus:outline-none
-                      focus:border-primary"
+                    className="bg-[#383838] text-white px-3 py-2 rounded border
+                      border-[#444444] text-sm focus:outline-none
+                      focus:border-primary hover:border-[#8c8c8c] transition-colors"
                     aria-label="Initial value"
                   />
                 </div>

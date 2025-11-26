@@ -53,7 +53,7 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
   return (
     <div
       className="w-canvas h-canvas rounded-lg overflow-hidden
-        shadow-[0_2px_8px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)]
+        shadow-[0_2px_8px_rgba(0,0,0,0.5),0_0_0_1px_#3c3c3c]
         bg-black relative"
     >
       <div
