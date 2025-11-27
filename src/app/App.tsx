@@ -8,6 +8,7 @@ import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
 import { VideoExportModal } from "./components/video-export";
 import HelpIcon from "./components/icons/HelpIcon";
+import CoffeeIcon from "./components/icons/CoffeeIcon";
 import { SHADER_PRESETS } from "./presets";
 import { useSyncedRef, useShaderEngine, useShaderLifecycle } from "./hooks";
 import {
@@ -326,7 +327,7 @@ const App: React.FC = () => {
         className="text-[11px] text-[#999999] text-center max-w-lg absolute
           bottom-4"
       >
-        Live shader preview above • Adjust parameters in real-time
+        Live shader preview above • Adjust parameters in real-time • <a href="https://github.com/isandrocks/ShaderStudio/issues" target="_blank" rel="noopener noreferrer">Report a issue</a>
       </p>
 
       {/* Help Icon & Tooltip */}
@@ -374,6 +375,20 @@ const App: React.FC = () => {
             )}
           </div>
         )}
+      </div>
+
+      {/* Donate Icon & Tooltip */}
+      <div className="absolute bottom-4 right-4 z-10">
+        <a
+          href="https://ko-fi.com/R6R3189SAJ"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Help me continue my lifelong mission of using money irresponsibly"
+          className="text-[#999999] hover:text-white cursor-pointer
+            transition-colors block"
+        >
+          <CoffeeIcon className="w-5 h-5" />
+        </a>
       </div>
 
       <EffectPicker
