@@ -5,6 +5,8 @@ import RadialGradientIcon from "./components/icons/RadialGradientIcon";
 import CircleIcon from "./components/icons/CircleIcon";
 import CheckerboardIcon from "./components/icons/CheckerboardIcon";
 import NoiseIcon from "./components/icons/NoiseIcon";
+import RectangleIcon from "./components/icons/RectangleIcon";
+import VideoIcon from "./components/icons/VideoIcon";
 
 export const LAYER_TEMPLATES: EffectTemplate[] = [
   // ==========================================================================
@@ -205,6 +207,125 @@ vec3 noisePattern(vec2 uv, vec3 color, float scale, float time) {
         max: 200.0,
         step: 1.0,
         label: "Scale",
+      },
+    },
+  },
+  // ==========================================================================
+  // NEW TEMPLATES
+  // ==========================================================================
+  {
+    id: "grid",
+    name: "Grid",
+    type: "pattern",
+    icon: <RectangleIcon className="w-6 h-6" />,
+    description: "Grid lines pattern",
+    glslFunction: `
+vec3 gridPattern(vec2 uv, vec3 color1, vec3 color2, float scale, float thickness) {
+    vec2 grid = fract(uv * scale);
+    float line = step(thickness, grid.x) * step(thickness, grid.y);
+    return mix(color1, color2, line);
+}
+`,
+    glslCall: "gridPattern(uv, {color1}, {color2}, {scale}, {thickness})",
+    defaultProperties: {
+      color1: {
+        value: [0.5, 0.5, 0.5],
+        type: "vec3",
+        label: "Line Color",
+      },
+      color2: {
+        value: [0.0, 0.0, 0.0],
+        type: "vec3",
+        label: "Cell Color",
+      },
+      scale: {
+        value: 10.0,
+        type: "float",
+        min: 1.0,
+        max: 50.0,
+        step: 1.0,
+        label: "Scale",
+      },
+      thickness: {
+        value: 0.1,
+        type: "float",
+        min: 0.01,
+        max: 0.5,
+        step: 0.01,
+        label: "Thickness",
+      },
+    },
+  },
+  {
+    id: "scanlines",
+    name: "Scanlines",
+    type: "pattern",
+    icon: <VideoIcon className="w-6 h-6" />,
+    description: "Horizontal scanlines",
+    glslFunction: `
+vec3 scanlines(vec2 uv, vec3 color1, vec3 color2, float count) {
+    float s = sin(uv.y * count * 3.14159 * 2.0);
+    s = s * 0.5 + 0.5;
+    return mix(color1, color2, s);
+}
+`,
+    glslCall: "scanlines(uv, {color1}, {color2}, {count})",
+    defaultProperties: {
+      color1: {
+        value: [0.0, 0.0, 0.0],
+        type: "vec3",
+        label: "Color 1",
+      },
+      color2: {
+        value: [1.0, 1.0, 1.0],
+        type: "vec3",
+        label: "Color 2",
+      },
+      count: {
+        value: 50.0,
+        type: "float",
+        min: 10.0,
+        max: 200.0,
+        step: 1.0,
+        label: "Count",
+      },
+    },
+  },
+  {
+    id: "vignette",
+    name: "Vignette",
+    type: "shape",
+    icon: <RadialGradientIcon className="w-6 h-6" />,
+    description: "Vignette frame",
+    glslFunction: `
+vec3 vignette(vec2 uv, vec3 color, float radius, float softness) {
+    float d = distance(uv, vec2(0.5));
+    float v = smoothstep(radius, radius - softness, d);
+    return color * (1.0 - v);
+}
+`,
+    glslCall: "vignette(uv, {color}, {radius}, {softness})",
+    defaultProperties: {
+      color: {
+        value: [0.0, 0.0, 0.0],
+        type: "vec3",
+        label: "Color",
+      },
+      radius: {
+        value: 0.8,
+        type: "float",
+        min: 0.1,
+        max: 1.5,
+        step: 0.01,
+        label: "Radius",
+      },
+      softness: {
+        value: 0.4,
+        type: "float",
+        min: 0.0,
+        max: 1.0,
+        step: 0.01,
+        label: "Softness",
       },
     },
   },
