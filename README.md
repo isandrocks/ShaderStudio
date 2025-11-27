@@ -169,6 +169,10 @@ src/
 ├── app/
 │   ├── components/           # React components
 │   │   ├── color-picker/         # Modular color picker (6 files)
+│   │   ├── layers/               # Layer Builder components
+│   │   │   ├── LayerPanel.tsx    # Main layer list interface
+│   │   │   ├── LayerProperties.tsx # Layer settings
+│   │   │   └── EffectPicker.tsx  # Effect selection modal
 │   │   ├── video-export/         # Video export utilities
 │   │   ├── ControlPanel.tsx      # Dynamic uniform controls sidebar
 │   │   ├── ShaderCanvas.tsx      # WebGL canvas with pause/play
@@ -190,13 +194,15 @@ src/
 │   │   └── index.ts              # Hook exports
 │   ├── handlers/             # Business logic factories
 │   │   ├── uniformHandlers.ts    # Uniform CRUD (60 lines)
+│   │   ├── layerHandlers.ts      # Layer CRUD (80 lines)
 │   │   ├── shaderLoadHandlers.ts # Preset/shader loading (70 lines)
 │   │   ├── figmaHandlers.ts      # Figma API (50 lines)
 │   │   ├── modalHandlers.ts      # Modal operations (50 lines)
 │   │   ├── videoExportHandler.ts # Video export (50 lines)
 │   │   └── index.ts              # Handler exports
 │   ├── utils/                # Pure utility functions
-│   │   └── shaderUtils.ts        # Shader utilities (110 lines)
+│   │   ├── shaderUtils.ts        # Shader utilities (110 lines)
+│   │   └── layerShaderGenerator.ts # Layer composition logic (175 lines)
 │   ├── generated/            # Auto-generated files
 │   │   ├── preset-thumbnails.ts  # Preset thumbnail data
 │   │   └── preset-thumbnails.json # Thumbnail source
@@ -204,6 +210,7 @@ src/
 │   ├── webgl.ts              # WebGL/shader rendering logic (240 lines)
 │   ├── shaders.ts            # GLSL shader source constants
 │   ├── presets.ts            # Preset shader definitions
+│   ├── layerTemplates.tsx    # Layer effect definitions
 │   ├── types.ts              # TypeScript type definitions
 │   ├── constants.ts          # App-wide constants
 │   ├── styles.css            # Tailwind CSS v4 with Figma dark theme
