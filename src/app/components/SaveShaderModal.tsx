@@ -95,24 +95,12 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
 
             // Check blob size (base64 will be ~33% larger)
             const estimatedBase64Size = (blob.size * 4) / 3;
-            console.log(
-              "[captureThumbnail] Blob size:",
-              blob.size,
-              "bytes, estimated base64:",
-              Math.round(estimatedBase64Size),
-              "bytes",
-            );
 
             // Convert blob to base64 for storage
             const reader = new FileReader();
             reader.onloadend = () => {
               const base64 = reader.result as string;
               const actualSize = base64.length;
-              console.log(
-                "[captureThumbnail] Thumbnail captured, actual size:",
-                actualSize,
-                "bytes",
-              );
 
               // Warn if approaching 100KB limit (leaving room for other shader data)
               if (actualSize > 50000) {

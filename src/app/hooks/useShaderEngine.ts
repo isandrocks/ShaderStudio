@@ -92,10 +92,6 @@ export const useShaderEngine = ({
     const { width: captureWidth, height: captureHeight } =
       calculateCaptureResolution(renderWidth, renderHeight);
 
-    console.log(
-      `[captureShader] Target: ${renderWidth}x${renderHeight}, Rendering: ${captureWidth}x${captureHeight}`,
-    );
-
     canvas.width = captureWidth;
     canvas.height = captureHeight;
 

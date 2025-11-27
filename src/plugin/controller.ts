@@ -54,10 +54,6 @@ async function saveShadersToDocument(shaders: SavedShader[]): Promise<void> {
     const dataString = JSON.stringify(shaders);
     const dataSize = dataString.length;
 
-    // Log data size for monitoring
-    console.log("[saveShadersToDocument] Total data size:", dataSize, "bytes");
-    console.log("[saveShadersToDocument] Number of shaders:", shaders.length);
-
     // Warn if approaching limits (Figma's setPluginData has no hard limit per key,
     // but very large data can cause performance issues)
     if (dataSize > 500000) {

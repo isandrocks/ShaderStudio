@@ -200,10 +200,6 @@ export const exportShaderVideo = async (
 ): Promise<void> => {
   const { duration, fps, playbackMode, resolution } = options;
 
-  console.log(
-    `[exportShaderVideo] Starting: ${duration}s at ${fps}fps, ${resolution}×${resolution}`,
-  );
-
   // Create off-screen canvas with WebGL
   const offscreenResult = createOffscreenCanvas(
     resolution,
@@ -259,7 +255,6 @@ export const exportShaderVideo = async (
 
   // Render bounce frames if needed
   if (playbackMode === "bounce") {
-    console.log("[exportShaderVideo] Adding bounce frames");
     for (let i = baseFrames - 2; i > 0; i--) {
       const time = i / fps;
       renderFrame(
@@ -286,8 +281,6 @@ export const exportShaderVideo = async (
   // Create video blob
   const videoBlob = createVideoBlob(chunks);
   const videoSizeKB = videoBlob.size / 1024;
-
-  console.log(`[exportShaderVideo] Complete: ${videoSizeKB.toFixed(2)} KB`);
 
   // Download video
   const filename = generateVideoFilename(resolution, fps);

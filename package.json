@@ -12,8 +12,8 @@
     "fmt": "prettier --write src/",
     "generate:thumbnails": "node scripts/generate-thumbnails.js"
   },
-  "author": "",
-  "license": "",
+  "author": "iSandRocks",
+  "license": "MIT",
   "devDependencies": {
     "@figma/eslint-plugin-figma-plugins": "*",
     "@figma/plugin-typings": "*",

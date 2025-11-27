@@ -15,11 +15,6 @@ export const createVideoExportHandler = (
     playbackMode: "normal" | "bounce",
     fps: number,
   ) => {
-    console.log("[handleExportVideo] Starting video export:", {
-      duration,
-      playbackMode,
-      fps,
-    });
     setIsExportingVideo(true);
     try {
       const shaderToUse = customFragmentShaderRef.current || shaderCode;
@@ -35,9 +30,6 @@ export const createVideoExportHandler = (
         dynamicUniformsRef.current,
         {
           onComplete: (blob, sizeKB) => {
-            console.log(
-              `[handleExportVideo] Video downloaded: ${(sizeKB / 1024).toFixed(2)} MB`,
-            );
             setIsVideoModalOpen(false);
           },
           onError: (error) => {
