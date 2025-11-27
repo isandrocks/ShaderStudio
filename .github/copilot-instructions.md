@@ -6,7 +6,9 @@
 
 ## Architecture Overview
 
-This is a Figma plugin that renders GLSL shaders in WebGL and applies them as image fills to rectangles. The plugin uses a **two-process architecture** with a **React + Tailwind CSS v4** frontend:
+This is a Figma plugin that renders GLSL shaders in WebGL and applies them as image fills to rectangles. The plugin uses a **two-process architecture** with a **React + Tailwind CSS v4** frontend. It features two distinct editing modes:
+1.  **Code Mode**: Direct GLSL editing with dynamic uniforms
+2.  **Layer Builder**: Visual composition of effects (gradients, noise, shapes) without coding
 
 1. **Plugin sandbox** (`src/plugin/controller.ts` → `dist/code.js`): Runs in Figma's restricted environment with access to the Figma API
 2. **UI iframe** (React app in `src/app/` → `dist/ui.html`): Runs in a browser context with full DOM/WebGL access but no Figma API access
@@ -88,6 +90,7 @@ import { handlers } from "./handlers";
 const App: React.FC = () => {
   // State declarations (60 lines)
   const [state] = useState(...)
+  const [viewMode, setViewMode] = useState<"builder" | "code">("code");
   
   // Refs (20 lines)
   const ref = useRef(...)
@@ -100,7 +103,12 @@ const App: React.FC = () => {
   useShaderLifecycle(...)
   
   // JSX layout (150 lines)
-  return <div>...</div>
+  return (
+    <div>
+      {viewMode === "builder" ? <LayerPanel /> : <ControlPanel />}
+      <ShaderCanvas />
+    </div>
+  );
 };
 ```
 
@@ -113,6 +121,10 @@ src/app/
 ├── App.tsx                    # Component composition ONLY (294 lines)
 ├── components/                # UI components (each <350 lines)
 │   ├── color-picker/         # Modular color picker (6 files)
+│   ├── layers/               # Layer Builder components
+│   │   ├── LayerPanel.tsx    # Main layer list interface
+│   │   ├── LayerProperties.tsx # Layer settings
+│   │   └── EffectPicker.tsx  # Effect selection modal
 │   ├── video-export/         # Video export utilities
 │   └── [28 component files]
 ├── hooks/                     # Custom React hooks
@@ -122,16 +134,19 @@ src/app/
 │   └── index.ts              # Hook exports
 ├── handlers/                  # Business logic factories
 │   ├── uniformHandlers.ts    # Uniform CRUD (60 lines)
+│   ├── layerHandlers.ts      # Layer CRUD (80 lines)
 │   ├── shaderLoadHandlers.ts # Preset/shader loading (70 lines)
 │   ├── figmaHandlers.ts      # Figma API comm (50 lines)
 │   ├── modalHandlers.ts      # Modal operations (50 lines)
 │   ├── videoExportHandler.ts # Video export (50 lines)
 │   └── index.ts              # Handler exports
 ├── utils/                     # Pure utility functions
-│   └── shaderUtils.ts        # Shader utilities (110 lines)
+│   ├── shaderUtils.ts        # Shader utilities (110 lines)
+│   └── layerShaderGenerator.ts # Layer composition logic (175 lines)
 ├── webgl.ts                   # WebGL core logic (240 lines)
 ├── types.ts                   # TypeScript type definitions
 ├── presets.ts                 # Shader presets
+├── layerTemplates.tsx         # Layer effect definitions
 ├── constants.ts               # App constants
 └── styles.css                 # Tailwind CSS v4
 ```
@@ -144,9 +159,13 @@ Component hierarchy:
 
 ```
 App.tsx (Pure composition - NO business logic)
-├── ControlPanel (Uniform controls sidebar)
+├── ControlPanel (Code Mode Sidebar)
 │   ├── SliderControl × N (Float uniforms)
-│   └── ColorControl × N (Color pickers with modular color-picker/)
+│   └── ColorControl × N (Color pickers)
+├── LayerPanel (Builder Mode Sidebar)
+│   ├── LayerList (Draggable layers)
+│   ├── LayerProperties (Effect settings)
+│   └── EffectPicker (Add new layer)
 ├── ShaderCanvas (WebGL canvas with pause/play)
 ├── ShaderModal (Ace Editor for shader code)
 ├── UniformConfigModal (Add new uniform)
@@ -215,6 +234,17 @@ export const createUniformHandlers = (
   return { addUniform, updateUniform, removeUniform };
 };
 ```
+
+### Layer Composition System
+
+The Layer Builder allows visual composition of shaders:
+1.  User adds layers (gradients, shapes, noise) via `LayerPanel`
+2.  `generateLayeredShader()` constructs GLSL code:
+    - Injects blend mode functions
+    - Injects effect template functions
+    - Composes layers using `mix()` operations
+3.  Resulting shader is passed to `useShaderEngine`
+4.  Layer properties are mapped to dynamic uniforms
 
 ### Shader Rendering Pipeline
 
@@ -402,6 +432,11 @@ dist/                                 # Build output (git-ignored)
 - Unique name generation
 - Error handling
 
+**`handlers/layerHandlers.ts`** (80 lines) - Layer CRUD
+- Factory: `createLayerHandlers()`
+- Returns: `addLayer`, `removeLayer`, `updateLayer`, `reorderLayers`
+- Manages layer state and property updates
+
 **`handlers/shaderLoadHandlers.ts`** (70 lines) - Shader Loading
 - Factory: `createShaderLoadHandlers()`
 - Returns: `loadPreset`, `loadSavedShader`, `deleteSavedShader`
@@ -445,6 +480,12 @@ dist/                                 # Build output (git-ignored)
   - `downloadVideo()`: Blob download
   - Supports normal/bounce playback modes
 - `index.ts`: Exports utilities
+
+**`components/layers/`** (Layer Builder)
+- `LayerPanel.tsx`: Main list view with drag-and-drop reordering
+- `LayerProperties.tsx`: Property editors for selected layer
+- `EffectPicker.tsx`: Grid of available effects to add
+- `LayerItem.tsx`: Individual layer row with visibility toggle
 
 **`components/ColorControl.tsx`** (100 lines) - Color Uniform Control
 - Imports modular color-picker
@@ -505,6 +546,13 @@ dist/                                 # Build output (git-ignored)
 - `createDynamicUniform()`: Factory for new uniform objects
 - `calculateCaptureResolution()`: 2x supersampling for high-quality captures
 
+**`utils/layerShaderGenerator.ts`** (175 lines) - Layer Composition
+- `generateLayeredShader()`: Main composition function
+- Injects blend mode helper functions
+- Injects used template functions
+- Generates `main()` function with layer blending logic
+- Cleans up previous injections to prevent duplication
+
 **`webgl.ts`** (240 lines) - WebGL Core
 - `initWebGL()`: Context creation, shader compilation, uniform setup
 - `buildFragmentSource()`: Delegates to `injectUniforms()`
@@ -521,6 +569,11 @@ dist/                                 # Build output (git-ignored)
 - Array of `ShaderPreset` objects
 - Each with: name, category, description, fragmentShader, defaultUniforms, thumbnail
 - Categories: Patterns, Colors, Effects, Noise, Gradients
+
+**`src/app/layerTemplates.tsx`** - Layer Definitions
+- Array of `EffectTemplate` objects
+- Defines available effects for Layer Builder
+- Contains GLSL snippets and default properties
 
 **`src/app/constants.ts`** - App Constants
 - Color palette definitions

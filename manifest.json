@@ -1,5 +1,5 @@
 {
-  "name": "Shader Studio",
+  "name": "GL Shader Studio",
   "id": "1570153150483583043",
   "api": "1.0.0",
   "main": "dist/code.js",

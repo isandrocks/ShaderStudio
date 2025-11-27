@@ -1,4 +1,4 @@
-# Shader Studio
+# GL Shader Studio
 
 A Figma plugin that creates dynamic backgrounds, textures, and animated fills using real-time GLSL shaders with WebGL rendering.
 
@@ -10,6 +10,7 @@ A Figma plugin that creates dynamic backgrounds, textures, and animated fills us
 ## Features
 
 ✨ **Real-time Shader Preview** - See your GLSL shaders render live with WebGL  
+🏗️ **Layer Builder** - Visually compose shaders using stackable effects (gradients, noise, shapes) without coding  
 🎨 **Dynamic Uniforms** - Create float sliders and vec3/vec4 color pickers on the fly  
 📝 **Advanced Code Editor** - Edit shaders with GLSL syntax highlighting (Ace Editor)  
 🎭 **Preset Library** - Browse and load curated shader presets by category  

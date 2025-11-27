@@ -1,5 +1,5 @@
 {
-  "name": "shader-studio",
+  "name": "gl-shader-studio",
   "version": "1.0.0",
   "description": "Create dynamic backgrounds, textures, and animated fills using real-time GLSL shaders",
   "main": "dist/code.js",
