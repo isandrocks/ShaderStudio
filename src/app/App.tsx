@@ -9,6 +9,10 @@ import { SavedShadersGallery } from "./components/SavedShadersGallery";
 import { VideoExportModal } from "./components/video-export";
 import HelpIcon from "./components/icons/HelpIcon";
 import CoffeeIcon from "./components/icons/CoffeeIcon";
+import MinimizeIcon from "./components/icons/MinimizeIcon";
+import MaximizeIcon from "./components/icons/MaximizeIcon";
+import PauseIcon from "./components/icons/PauseIcon";
+import PlayIcon from "./components/icons/PlayIcon";
 import { SHADER_PRESETS } from "./presets";
 import { useSyncedRef, useShaderEngine, useShaderLifecycle } from "./hooks";
 import {
@@ -47,6 +51,7 @@ const App: React.FC = () => {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [isExportingVideo, setIsExportingVideo] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // State: shaders
   const [savedShaders, setSavedShaders] = useState<SavedShader[]>([]);
@@ -143,6 +148,7 @@ const App: React.FC = () => {
     handleApplyToSelection,
     handleCreateRectangle,
     handleToggleOverlay,
+    handleResizeWindow,
   } = createFigmaHandlers(
     startTimeRef,
     paramsRef,
@@ -230,10 +236,21 @@ const App: React.FC = () => {
     captureShader,
   });
 
+  const toggleMinimize = () => {
+    if (isMinimized) {
+      handleResizeWindow(825, 575);
+      setIsMinimized(false);
+    } else {
+      handleResizeWindow(200, 48);
+      setIsMinimized(true);
+    }
+  };
+
   return (
     <div
-      className="font-sans bg-[#1e1e1e] text-white p-4 flex flex-col
-        items-center gap-4 overflow-hidden"
+      className={`font-sans bg-[#1e1e1e] text-white ${
+        isMinimized ? "p-2" : "p-4"
+      } flex flex-col items-center gap-4 overflow-hidden h-full w-full relative`}
     >
       {criticalError && (
         <div
@@ -255,7 +272,36 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="flex gap-4 items-start">
+      {isMinimized && (
+        <div className="flex items-center justify-between w-full h-full px-2">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-xs font-bold text-gray-300">Shader Studio</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePauseChange(!params.paused)}
+              className="p-1.5 hover:bg-[#3c3c3c] rounded text-gray-300 hover:text-white transition-colors"
+              title={params.paused ? "Play" : "Pause"}
+            >
+              {params.paused ? (
+                <PlayIcon className="w-3.5 h-3.5" />
+              ) : (
+                <PauseIcon className="w-3.5 h-3.5" />
+              )}
+            </button>
+            <button
+              onClick={toggleMinimize}
+              className="p-1.5 hover:bg-[#3c3c3c] rounded text-gray-300 hover:text-white transition-colors"
+              title="Restore"
+            >
+              <MaximizeIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={`${isMinimized ? "hidden" : "flex"} gap-4 items-start`}>
         {viewMode === "builder" ? (
           <LayerPanel
             layers={layers}
@@ -323,73 +369,85 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <p
-        className="text-[11px] text-[#999999] text-center max-w-lg absolute
-          bottom-4"
-      >
-        Live shader preview above • Adjust parameters in real-time • <a href="https://github.com/isandrocks/ShaderStudio/issues" target="_blank" rel="noopener noreferrer">Report a issue</a>
-      </p>
-
-      {/* Help Icon & Tooltip */}
-      <div className="absolute bottom-4 left-4 z-10">
-        <div
-          className="text-[#999999] hover:text-white cursor-pointer
-            transition-colors"
-          onMouseEnter={() => setShowHelp(true)}
-          onMouseLeave={() => setShowHelp(false)}
-        >
-          <HelpIcon className="w-5 h-5" />
-        </div>
-
-        {showHelp && (
-          <div
-            className="absolute bottom-8 left-0 w-64 bg-[#2c2c2c] border
-              border-[#3c3c3c] rounded-lg p-3 shadow-xl text-xs text-gray-300"
+      {!isMinimized && (
+        <>
+          <p
+            className="text-[11px] text-[#999999] text-center max-w-lg absolute
+              bottom-4"
           >
-            {viewMode === "builder" ? (
-              <>
-                <h4 className="font-bold text-white mb-2">Visual Builder</h4>
-                <ol className="list-decimal pl-4 space-y-1">
-                  <li>Add layers using the + button</li>
-                  <li>Select a layer to edit properties</li>
-                  <li>Drag layers to reorder them</li>
-                  <li>Switch to Code mode to see GLSL</li>
-                </ol>
-              </>
-            ) : (
-              <>
-                <h4 className="font-bold text-white mb-2">Using Parameters</h4>
-                <ol className="list-decimal pl-4 space-y-1">
-                  <li>Add a parameter using the + button</li>
-                  <li>Open Advanced Editor</li>
-                  <li>
-                    Declare the uniform in your code (e.g.{" "}
-                    <code className="bg-[#1e1e1e] px-1 rounded">
-                      uniform float myParam;
-                    </code>
-                    )
-                  </li>
-                  <li>Control the value from the main panel</li>
-                </ol>
-              </>
+            Live shader preview above • Adjust parameters in real-time • <a href="https://github.com/isandrocks/ShaderStudio/issues" target="_blank" rel="noopener noreferrer">Report a issue</a>
+          </p>
+
+          {/* Help Icon & Tooltip */}
+          <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3">
+            <button
+              onClick={toggleMinimize}
+              className="text-[#999999] hover:text-white cursor-pointer transition-colors"
+              title="Minimize"
+            >
+              <MinimizeIcon className="w-5 h-5" />
+            </button>
+
+            <div
+              className="text-[#999999] hover:text-white cursor-pointer
+                transition-colors"
+              onMouseEnter={() => setShowHelp(true)}
+              onMouseLeave={() => setShowHelp(false)}
+            >
+              <HelpIcon className="w-5 h-5" />
+            </div>
+
+            {showHelp && (
+              <div
+                className="absolute bottom-8 left-0 w-64 bg-[#2c2c2c] border
+                  border-[#3c3c3c] rounded-lg p-3 shadow-xl text-xs text-gray-300"
+              >
+                {viewMode === "builder" ? (
+                  <>
+                    <h4 className="font-bold text-white mb-2">Visual Builder</h4>
+                    <ol className="list-decimal pl-4 space-y-1">
+                      <li>Add layers using the + button</li>
+                      <li>Select a layer to edit properties</li>
+                      <li>Drag layers to reorder them</li>
+                      <li>Switch to Code mode to see GLSL</li>
+                    </ol>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="font-bold text-white mb-2">Using Parameters</h4>
+                    <ol className="list-decimal pl-4 space-y-1">
+                      <li>Add a parameter using the + button</li>
+                      <li>Open Advanced Editor</li>
+                      <li>
+                        Declare the uniform in your code (e.g.{" "}
+                        <code className="bg-[#1e1e1e] px-1 rounded">
+                          uniform float myParam;
+                        </code>
+                        )
+                      </li>
+                      <li>Control the value from the main panel</li>
+                    </ol>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Donate Icon & Tooltip */}
-      <div className="absolute bottom-4 right-4 z-10">
-        <a
-          href="https://ko-fi.com/R6R3189SAJ"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Help me continue my lifelong mission of using money irresponsibly"
-          className="text-[#999999] hover:text-white cursor-pointer
-            transition-colors block"
-        >
-          <CoffeeIcon className="w-5 h-5" />
-        </a>
-      </div>
+          {/* Donate Icon & Tooltip */}
+          <div className="absolute bottom-4 right-4 z-10">
+            <a
+              href="https://ko-fi.com/R6R3189SAJ"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Help me continue my lifelong mission of using money irresponsibly"
+              className="text-[#999999] hover:text-white cursor-pointer
+                transition-colors block"
+            >
+              <CoffeeIcon className="w-5 h-5" />
+            </a>
+          </div>
+        </>
+      )}
 
       <EffectPicker
         isOpen={isEffectPickerOpen}

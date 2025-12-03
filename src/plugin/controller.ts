@@ -100,6 +100,16 @@ figma.ui.onmessage = async (msg: {
         break;
       }
 
+      case "resize-ui": {
+        const { width, height } = msg as {
+          type: string;
+          width: number;
+          height: number;
+        };
+        figma.ui.resize(width, height);
+        break;
+      }
+
       case "shader-rendered": {
         applyShaderToRectangle(msg.imageData!);
         break;

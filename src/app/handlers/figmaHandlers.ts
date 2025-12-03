@@ -44,10 +44,19 @@ export const createFigmaHandlers = (
     );
   };
 
+  const handleResizeWindow = (width: number, height: number) => {
+    parent.postMessage(
+      { pluginMessage: { type: "resize-ui", width, height } },
+      "*",
+    );
+  };
+
   return {
     handlePauseChange,
     handleApplyToSelection,
     handleCreateRectangle,
     handleToggleOverlay,
+    handleResizeWindow,
+
   };
 };
