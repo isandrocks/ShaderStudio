@@ -8,6 +8,8 @@ A Figma plugin that creates dynamic backgrounds, textures, and animated fills us
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.1-06B6D4?logo=tailwindcss&logoColor=white)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-F16061?logo=ko-fi&logoColor=white)](https://ko-fi.com/R6R3189SAJ)
 
+[Plugin Link](https://www.figma.com/community/plugin/1570153150483583043)
+
 ## Features
 
 ✨ **Real-time Shader Preview** - See your GLSL shaders render live with WebGL  
