@@ -11,6 +11,7 @@ import FolderIcon from "./icons/FolderIcon";
 import RectangleIcon from "./icons/RectangleIcon";
 import VideoIcon from "./icons/VideoIcon";
 import LayersIcon from "./icons/LayersIcon";
+import SparklesIcon from "./icons/SparklesIcon";
 import type { DynamicUniform, UniformValue } from "../types";
 
 interface ControlPanelProps {
@@ -27,6 +28,7 @@ interface ControlPanelProps {
   onUpdateUniform: (id: string, value: UniformValue) => void;
   onRemoveUniform: (id: string) => void;
   onToggleBuilderMode: () => void;
+  onAiGenerateClick: () => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -43,6 +45,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onUpdateUniform,
   onRemoveUniform,
   onToggleBuilderMode,
+  onAiGenerateClick,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [isApplyDropdownOpen, setIsApplyDropdownOpen] = React.useState(false);
@@ -229,60 +232,74 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         {/* Secondary Actions */}
-        <div className="relative">
-          <div className="flex gap-0 w-full">
-            <button
-              onClick={handleAdvancedEditorClick}
-              className="flex-1 h-7 px-3 text-xs font-medium bg-[#3c3c3c]
-                text-gray-300 rounded-l-md cursor-pointer transition-all
-                duration-150 outline-none border border-[#4c4c4c]
-                hover:bg-[#454545] hover:border-[#5c5c5c] flex items-center
-                justify-center gap-2"
-            >
-              <EditIcon className="w-3.5 h-3.5" />
-              <span>Advanced Editor</span>
-            </button>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              aria-label="Show more options"
-              className="w-7 h-7 flex items-center justify-center text-gray-300
-                bg-[#3c3c3c] rounded-r-md cursor-pointer transition-all
-                duration-150 outline-none border border-l-0 border-[#4c4c4c]
-                hover:bg-[#454545] hover:border-[#5c5c5c]"
-            >
-              <ChevronDownIcon />
-            </button>
-          </div>
-
-          {/* Dropdown Menu */}
-          {isDropdownOpen && (
-            <div
-              className="absolute bottom-full mb-1 left-0 right-0 z-10
-                bg-[#3c3c3c] border border-[#4c4c4c] rounded-sm overflow-hidden
-                shadow-lg"
-            >
+        <div className="flex gap-2 w-full">
+          <div className="relative flex-1">
+            <div className="flex gap-0 w-full">
               <button
-                onClick={handlePresetClick}
-                className="w-full h-7 px-3 text-xs font-medium text-left
-                  bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
-                  duration-150 outline-none border-none hover:bg-[#454545] flex
-                  items-center gap-2"
+                onClick={handleAdvancedEditorClick}
+                className="flex-1 h-7 px-3 text-xs font-medium bg-[#3c3c3c]
+                  text-gray-300 rounded-l-md cursor-pointer transition-all
+                  duration-150 outline-none border border-[#4c4c4c]
+                  hover:bg-[#454545] hover:border-[#5c5c5c] flex items-center
+                  justify-center gap-2"
               >
-                <PaletteIcon className="w-3.5 h-3.5" />
-                <span>Load Preset</span>
+                <EditIcon className="w-3.5 h-3.5" />
+                <span>Advanced Editor</span>
               </button>
               <button
-                onClick={handleMyShadersClick}
-                className="w-full h-7 px-3 text-xs font-medium text-left
-                  bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
-                  duration-150 outline-none border-none hover:bg-[#454545] flex
-                  items-center gap-2"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                aria-label="Show more options"
+                className="w-7 h-7 flex items-center justify-center
+                  text-gray-300 bg-[#3c3c3c] rounded-r-md cursor-pointer
+                  transition-all duration-150 outline-none border border-l-0
+                  border-[#4c4c4c] hover:bg-[#454545] hover:border-[#5c5c5c]"
               >
-                <FolderIcon className="w-3.5 h-3.5" />
-                <span>My Shaders</span>
+                <ChevronDownIcon />
               </button>
             </div>
-          )}
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div
+                className="absolute bottom-full mb-1 left-0 right-0 z-10
+                  bg-[#3c3c3c] border border-[#4c4c4c] rounded-sm
+                  overflow-hidden shadow-lg"
+              >
+                <button
+                  onClick={handlePresetClick}
+                  className="w-full h-7 px-3 text-xs font-medium text-left
+                    bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
+                    duration-150 outline-none border-none hover:bg-[#454545]
+                    flex items-center gap-2"
+                >
+                  <PaletteIcon className="w-3.5 h-3.5" />
+                  <span>Load Preset</span>
+                </button>
+                <button
+                  onClick={handleMyShadersClick}
+                  className="w-full h-7 px-3 text-xs font-medium text-left
+                    bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
+                    duration-150 outline-none border-none hover:bg-[#454545]
+                    flex items-center gap-2"
+                >
+                  <FolderIcon className="w-3.5 h-3.5" />
+                  <span>My Shaders</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={onAiGenerateClick}
+            className="w-9 h-7 flex items-center justify-center bg-[#3c3c3c]
+              text-gray-300 rounded-md cursor-pointer transition-all
+              duration-150 outline-none border border-[#4c4c4c]
+              hover:bg-[#454545] hover:border-[#5c5c5c] active:bg-[#2a2a2a]
+              active:scale-[0.98]"
+            title="Generate with Gemini AI"
+          >
+            <SparklesIcon className="w-4 h-4" />
+          </button>
         </div>
 
         <button

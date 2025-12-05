@@ -70,7 +70,8 @@ export type ModalType =
   | "config"
   | "presets"
   | "save"
-  | "saved-shaders";
+  | "saved-shaders"
+  | "ai-generation";
 
 // ============================================================================
 // Layer-Based Builder Types

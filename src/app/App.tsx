@@ -7,6 +7,7 @@ import { PresetGallery } from "./components/PresetGallery";
 import SaveShaderModal from "./components/SaveShaderModal";
 import { SavedShadersGallery } from "./components/SavedShadersGallery";
 import { VideoExportModal } from "./components/video-export";
+import { AiGenerationModal } from "./components/AiGenerationModal";
 import HelpIcon from "./components/icons/HelpIcon";
 import CoffeeIcon from "./components/icons/CoffeeIcon";
 import MinimizeIcon from "./components/icons/MinimizeIcon";
@@ -34,6 +35,7 @@ import type {
   SavedShader,
   ModalType,
   EffectLayer, // Added
+  DynamicUniform,
 } from "./types";
 
 const App: React.FC = () => {
@@ -193,6 +195,22 @@ const App: React.FC = () => {
     setSelectedLayerId,
   );
 
+  // AI Generation Handler
+  const handleAiGenerate = (shader: {
+    fragmentShader: string;
+    uniforms: DynamicUniform[];
+  }) => {
+    try {
+      customFragmentShaderRef.current = shader.fragmentShader;
+      handleShaderUpdate(shader.fragmentShader);
+      setDynamicUniforms(shader.uniforms);
+      setShaderError("");
+    } catch (error) {
+      console.error("Error loading AI shader:", error);
+      setCriticalError("Failed to load generated shader");
+    }
+  };
+
   // Effect: Generate shader when layers change
   React.useEffect(() => {
     if (viewMode === "builder") {
@@ -250,7 +268,8 @@ const App: React.FC = () => {
     <div
       className={`font-sans bg-[#1e1e1e] text-white ${
         isMinimized ? "p-2" : "p-4"
-      } flex flex-col items-center gap-4 overflow-hidden h-full w-full relative`}
+      } flex flex-col items-center gap-4
+        overflow-hidden h-full w-full relative`}
     >
       {criticalError && (
         <div
@@ -276,12 +295,15 @@ const App: React.FC = () => {
         <div className="flex items-center justify-between w-full h-full px-2">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-bold text-gray-300">Shader Studio</span>
+            <span className="text-xs font-bold text-gray-300">
+              Shader Studio
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => handlePauseChange(!params.paused)}
-              className="p-1.5 hover:bg-[#3c3c3c] rounded text-gray-300 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-[#3c3c3c] rounded text-gray-300
+                hover:text-white transition-colors"
               title={params.paused ? "Play" : "Pause"}
             >
               {params.paused ? (
@@ -292,7 +314,8 @@ const App: React.FC = () => {
             </button>
             <button
               onClick={toggleMinimize}
-              className="p-1.5 hover:bg-[#3c3c3c] rounded text-gray-300 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-[#3c3c3c] rounded text-gray-300
+                hover:text-white transition-colors"
               title="Restore"
             >
               <MaximizeIcon className="w-3.5 h-3.5" />
@@ -340,6 +363,7 @@ const App: React.FC = () => {
               setBaseShaderCode(shaderCode);
               setViewMode("builder");
             }}
+            onAiGenerateClick={() => setOpenModal("ai-generation")}
           />
         )}
 
@@ -375,14 +399,22 @@ const App: React.FC = () => {
             className="text-[11px] text-[#999999] text-center max-w-lg absolute
               bottom-4"
           >
-            Live shader preview above • Adjust parameters in real-time • <a href="https://github.com/isandrocks/ShaderStudio/issues" target="_blank" rel="noopener noreferrer">Report a issue</a>
+            Live shader preview above • Adjust parameters in real-time •{" "}
+            <a
+              href="https://github.com/isandrocks/ShaderStudio/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Report a issue
+            </a>
           </p>
 
           {/* Help Icon & Tooltip */}
           <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3">
             <button
               onClick={toggleMinimize}
-              className="text-[#999999] hover:text-white cursor-pointer transition-colors"
+              className="text-[#999999] hover:text-white cursor-pointer
+                transition-colors"
               title="Minimize"
             >
               <MinimizeIcon className="w-5 h-5" />
@@ -400,11 +432,14 @@ const App: React.FC = () => {
             {showHelp && (
               <div
                 className="absolute bottom-8 left-0 w-64 bg-[#2c2c2c] border
-                  border-[#3c3c3c] rounded-lg p-3 shadow-xl text-xs text-gray-300"
+                  border-[#3c3c3c] rounded-lg p-3 shadow-xl text-xs
+                  text-gray-300"
               >
                 {viewMode === "builder" ? (
                   <>
-                    <h4 className="font-bold text-white mb-2">Visual Builder</h4>
+                    <h4 className="font-bold text-white mb-2">
+                      Visual Builder
+                    </h4>
                     <ol className="list-decimal pl-4 space-y-1">
                       <li>Add layers using the + button</li>
                       <li>Select a layer to edit properties</li>
@@ -414,7 +449,9 @@ const App: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <h4 className="font-bold text-white mb-2">Using Parameters</h4>
+                    <h4 className="font-bold text-white mb-2">
+                      Using Parameters
+                    </h4>
                     <ol className="list-decimal pl-4 space-y-1">
                       <li>Add a parameter using the + button</li>
                       <li>Open Advanced Editor</li>
@@ -510,25 +547,11 @@ const App: React.FC = () => {
         onExport={handleExportVideo}
       />
 
-      {/* Exporting Video Spinner Overlay */}
-      {isExportingVideo && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center
-            z-50"
-        >
-          <div
-            className="bg-[#2a2a2a] rounded-lg p-6 flex flex-col items-center
-              gap-4 border border-[#3c3c3c]"
-          >
-            <div
-              className="w-12 h-12 border-4 border-primary border-t-transparent
-                rounded-full animate-spin"
-            ></div>
-            <div className="text-gray-300 font-medium">Exporting Video...</div>
-            <div className="text-xs text-gray-500">This may take a moment</div>
-          </div>
-        </div>
-      )}
+      <AiGenerationModal
+        isOpen={openModal === "ai-generation"}
+        onClose={() => setOpenModal("none")}
+        onGenerate={handleAiGenerate}
+      />
     </div>
   );
 };

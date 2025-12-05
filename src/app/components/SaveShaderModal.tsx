@@ -30,6 +30,18 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
   const [includeThumbnail, setIncludeThumbnail] = useState(true);
   const [error, setError] = useState("");
   const [isCapturing, setIsCapturing] = useState(false);
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Auto-focus name input when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      // Small delay to ensure DOM is ready and previous modal is gone
+      const timer = setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -198,6 +210,7 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
           <div className="flex flex-col">
             <label className="text-xs text-gray-300 mb-1">Shader Name:</label>
             <input
+              ref={nameInputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}

@@ -57,6 +57,5 @@ export const createFigmaHandlers = (
     handleCreateRectangle,
     handleToggleOverlay,
     handleResizeWindow,
-
   };
 };

@@ -20,6 +20,7 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
   onDeleteShader,
 }) => {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -35,11 +36,20 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
     onClose();
   };
 
-  const handleDelete = (e: React.MouseEvent, id: string, name: string) => {
-    e.stopPropagation(); // Prevent card click from triggering
-    if (confirm(`Delete shader "${name}"? This cannot be undone.`)) {
-      onDeleteShader(id);
-    }
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setDeleteConfirmId(id);
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    onDeleteShader(id);
+    setDeleteConfirmId(null);
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteConfirmId(null);
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -178,11 +188,9 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
                     </div>
 
                     {/* Description */}
-                    {shader.description && (
-                      <p className="text-sm text-[#999999] line-clamp-2">
-                        {shader.description}
-                      </p>
-                    )}
+                    <p className="text-sm text-[#999999] line-clamp-2">
+                      {shader.description || "\u00A0"}
+                    </p>
 
                     {/* Parameter count */}
                     <p className="text-xs text-[#666666] mt-2">
@@ -191,18 +199,47 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
                     </p>
                   </div>
 
-                  {/* Delete button */}
-                  <button
-                    onClick={(e) => handleDelete(e, shader.id, shader.name)}
-                    className="absolute bottom-7 right-7 opacity-0
-                      group-hover:opacity-100 transition-all p-2"
-                    title="Delete shader"
-                  >
-                    <DeleteIcon
-                      className="h-7 cursor-pointer p-1 rounded-lg
-                        transition-all hover:bg-red-900/40"
-                    />
-                  </button>
+                  {/* Delete button or confirmation */}
+                  {deleteConfirmId === shader.id ? (
+                    <div
+                      className="absolute inset-0 bg-[#1e1e1e]/95 flex flex-col
+                        items-center justify-center gap-3 rounded-lg p-4 z-10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <p className="text-sm text-white font-medium text-center">
+                        Delete this shader?
+                      </p>
+                      <div className="flex gap-2 w-full">
+                        <button
+                          onClick={(e) => handleConfirmDelete(e, shader.id)}
+                          className="flex-1 px-2 py-1.5 bg-red-600 text-white
+                            text-xs rounded hover:bg-red-500 transition-colors"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={handleCancelDelete}
+                          className="flex-1 px-2 py-1.5 bg-[#3c3c3c] text-white
+                            text-xs rounded hover:bg-[#4c4c4c]
+                            transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => handleDeleteClick(e, shader.id)}
+                      className="absolute bottom-7 right-7 opacity-0
+                        group-hover:opacity-100 transition-all p-2"
+                      title="Delete shader"
+                    >
+                      <DeleteIcon
+                        className="h-7 cursor-pointer p-1 rounded-lg
+                          transition-all hover:bg-red-900/40"
+                      />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

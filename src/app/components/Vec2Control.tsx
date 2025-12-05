@@ -111,8 +111,8 @@ export const Vec2Control: React.FC<Vec2ControlProps> = ({
               value={x}
               step={0.01}
               onChange={(e) => onChange([parseFloat(e.target.value), y])}
-              className="bg-[#383838] text-white px-1 py-0.5 rounded border max-w-[125px]
-                border-[#444444] text-xs focus:outline-none
+              className="bg-[#383838] text-white px-1 py-0.5 rounded border
+                max-w-[125px] border-[#444444] text-xs focus:outline-none
                 focus:border-primary"
               aria-label={`${label} X value`}
             />
@@ -125,8 +125,8 @@ export const Vec2Control: React.FC<Vec2ControlProps> = ({
               value={y}
               step={0.01}
               onChange={(e) => onChange([x, parseFloat(e.target.value)])}
-              className="bg-[#383838] text-white px-1 py-0.5 rounded border max-w-[125px]
-                border-[#444444] text-xs focus:outline-none
+              className="bg-[#383838] text-white px-1 py-0.5 rounded border
+                max-w-[125px] border-[#444444] text-xs focus:outline-none
                 focus:border-primary"
               aria-label={`${label} Y value`}
             />
