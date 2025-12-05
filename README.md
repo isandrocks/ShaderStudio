@@ -13,6 +13,7 @@ A Figma plugin that creates dynamic backgrounds, textures, and animated fills us
 ## Features
 
 ✨ **Real-time Shader Preview** - See your GLSL shaders render live with WebGL  
+🤖 **AI Generation** - Generate shaders from text descriptions using Google Gemini models
 🏗️ **Layer Builder** - Visually compose shaders using stackable effects (gradients, noise, shapes) without coding  
 🎨 **Dynamic Uniforms** - Create float sliders and vec3/vec4 color pickers on the fly  
 📝 **Advanced Code Editor** - Edit shaders with GLSL syntax highlighting (Ace Editor)  
@@ -102,6 +103,20 @@ Then in Figma:
 2. Filter by category: All / Waves / Noise / Patterns / Effects
 3. Click preset card to load shader
 4. Modify uniforms and shader code as needed
+
+### AI Shader Generation
+
+Generate custom GLSL shaders using Google's Gemini AI models.
+
+1. Click the **✨ AI** button in the top toolbar.
+2. Enter your **Google Gemini API Key**.
+   - *Note: API keys are stored in memory only and are discarded when the plugin closes for security.*
+3. Select a model:
+   - **Gemini 2.5 Flash**: Fast and efficient.
+   - **Gemini 2.5 Pro**: Balanced performance.
+   - **Gemini 3 Pro (Preview)**: Most capable model.
+4. Describe the shader you want (e.g., "A cyberpunk neon grid with scanlines").
+5. Click **Generate**. The AI will write the GLSL code and set up dynamic uniforms automatically.
 
 ### Editing Shader Code
 
