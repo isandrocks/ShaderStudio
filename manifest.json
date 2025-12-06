@@ -7,7 +7,9 @@
   "enableProposedApi": false,
   "documentAccess": "dynamic-page",
   "editorType": [
-    "figma"
+    "figma",
+    "figjam",
+    "slides"
   ],
   "ui": "dist/ui.html",
   "networkAccess": {

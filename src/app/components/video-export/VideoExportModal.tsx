@@ -8,6 +8,14 @@ interface VideoExportModalProps {
     duration: number,
     playbackMode: "normal" | "bounce",
     fps: number,
+    resolution: number,
+  ) => void;
+  mode?: "export" | "apply";
+  onApply?: (
+    duration: number,
+    playbackMode: "normal" | "bounce",
+    fps: number,
+    resolution: number,
   ) => void;
 }
 
@@ -15,20 +23,30 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
   isOpen,
   onClose,
   onExport,
+  mode = "export",
+  onApply,
 }) => {
   const [duration, setDuration] = useState(5);
   const [playbackMode, setPlaybackMode] = useState<"normal" | "bounce">(
     "normal",
   );
   const [fps, setFps] = useState(30);
+  const [resolution, setResolution] = useState(1080);
 
   const handleExport = () => {
-    onExport(duration, playbackMode, fps);
+    if (mode === "apply" && onApply) {
+      onApply(duration, playbackMode, fps, resolution);
+    } else {
+      onExport(duration, playbackMode, fps, resolution);
+    }
     onClose();
   };
 
+  const title = mode === "apply" ? "Apply Video to Selection" : "Export Video";
+  const buttonText = mode === "apply" ? "Apply Video" : "Export Video";
+
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title="Export Video">
+    <BaseModal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="flex flex-col gap-4 p-4">
         {/* Duration Slider */}
         <div className="flex flex-col gap-2">
@@ -51,12 +69,35 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
           </div>
         </div>
 
-        {/* Resolution Info */}
+        {/* Resolution Selector */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-300">
             Resolution
           </label>
-          <div className="text-sm text-gray-400">1080×1080 (Square)</div>
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="resolution"
+                value="1080"
+                checked={resolution === 1080}
+                onChange={() => setResolution(1080)}
+                className="accent-primary"
+              />
+              <span className="text-sm text-gray-300">1080×1080 (HD)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="resolution"
+                value="2160"
+                checked={resolution === 2160}
+                onChange={() => setResolution(2160)}
+                className="accent-primary"
+              />
+              <span className="text-sm text-gray-300">2160×2160 (4K)</span>
+            </label>
+          </div>
         </div>
 
         {/* FPS Selector */}
@@ -132,7 +173,7 @@ const VideoExportModal: React.FC<VideoExportModalProps> = ({
               border-none hover:bg-primary-hover active:bg-primary-active
               active:scale-[0.98]"
           >
-            Export Video
+            {buttonText}
           </button>
           <button
             onClick={onClose}

@@ -10,6 +10,7 @@ export interface VideoExportOptions {
   fps: number;
   playbackMode: "normal" | "bounce";
   resolution: number;
+  skipDownload?: boolean;
 }
 
 export interface VideoExportCallbacks {
@@ -283,8 +284,10 @@ export const exportShaderVideo = async (
   const videoSizeKB = videoBlob.size / 1024;
 
   // Download video
-  const filename = generateVideoFilename(resolution, fps);
-  downloadVideo(videoBlob, filename);
+  if (!options.skipDownload) {
+    const filename = generateVideoFilename(resolution, fps);
+    downloadVideo(videoBlob, filename);
+  }
 
   callbacks?.onComplete?.(videoBlob, videoSizeKB);
 };

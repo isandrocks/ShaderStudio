@@ -51,6 +51,7 @@ const App: React.FC = () => {
   // State: modals
   const [openModal, setOpenModal] = useState<ModalType>("none");
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [videoExportMode, setVideoExportMode] = useState<"export" | "apply">("export");
   const [isExportingVideo, setIsExportingVideo] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -356,7 +357,10 @@ const App: React.FC = () => {
             onPresetsClick={() => setOpenModal("presets")}
             onSaveShader={() => setOpenModal("save")}
             onOpenSavedShaders={() => setOpenModal("saved-shaders")}
-            onExportVideo={() => setIsVideoModalOpen(true)}
+            onExportVideo={() => {
+              setVideoExportMode("export");
+              setIsVideoModalOpen(true);
+            }}
             dynamicUniforms={dynamicUniforms}
             onAddUniform={() => setOpenModal("config")}
             onUpdateUniform={updateUniform}
@@ -367,6 +371,10 @@ const App: React.FC = () => {
               setViewMode("builder");
             }}
             onAiGenerateClick={() => setOpenModal("ai-generation")}
+            onApplyWithVideo={() => {
+              setVideoExportMode("apply");
+              setIsVideoModalOpen(true);
+            }}
           />
         )}
 
@@ -551,6 +559,20 @@ const App: React.FC = () => {
         isOpen={isVideoModalOpen}
         onClose={() => setIsVideoModalOpen(false)}
         onExport={handleExportVideo}
+        mode={videoExportMode}
+        onApply={(duration, playbackMode, fps, resolution) => {
+          handleExportVideo(duration, playbackMode, fps, resolution, {
+            skipDownload: true,
+            onSuccess: async (blob) => {
+              const arrayBuffer = await blob.arrayBuffer();
+              const videoData = new Uint8Array(arrayBuffer);
+              parent.postMessage(
+                { pluginMessage: { type: "video-rendered", videoData } },
+                "*",
+              );
+            },
+          });
+        }}
       />
 
       <AiGenerationModal

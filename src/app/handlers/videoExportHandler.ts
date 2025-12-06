@@ -14,6 +14,8 @@ export const createVideoExportHandler = (
     duration: number,
     playbackMode: "normal" | "bounce",
     fps: number,
+    resolution: number,
+    options?: { skipDownload?: boolean; onSuccess?: (blob: Blob) => void },
   ) => {
     setIsExportingVideo(true);
     try {
@@ -24,13 +26,15 @@ export const createVideoExportHandler = (
           duration,
           fps,
           playbackMode,
-          resolution: 1080,
+          resolution,
+          skipDownload: options?.skipDownload,
         },
         shaderToUse,
         dynamicUniformsRef.current,
         {
-          onComplete: (blob, sizeKB) => {
+          onComplete: (blob, _sizeKB) => {
             setIsVideoModalOpen(false);
+            options?.onSuccess?.(blob);
           },
           onError: (error) => {
             setCriticalError(`Video export failed: ${error}`);

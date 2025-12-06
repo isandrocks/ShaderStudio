@@ -29,6 +29,7 @@ interface ControlPanelProps {
   onRemoveUniform: (id: string) => void;
   onToggleBuilderMode: () => void;
   onAiGenerateClick: () => void;
+  onApplyWithVideo: () => void;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -46,6 +47,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onRemoveUniform,
   onToggleBuilderMode,
   onAiGenerateClick,
+  onApplyWithVideo,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [isApplyDropdownOpen, setIsApplyDropdownOpen] = React.useState(false);
@@ -254,6 +256,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 >
                   <VideoIcon className="w-3.5 h-3.5" />
                   <span>Export Video</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsApplyDropdownOpen(false);
+                    onApplyWithVideo();
+                  }}
+                  className="w-full h-7 px-3 text-xs font-medium text-left
+                    bg-[#3c3c3c] text-gray-300 cursor-pointer transition-all
+                    duration-150 outline-none border-none hover:bg-[#454545]
+                    flex items-center gap-2"
+                >
+                  <VideoIcon className="w-3.5 h-3.5" />
+                  <span>Apply with Video</span>
                 </button>
               </div>
             )}
