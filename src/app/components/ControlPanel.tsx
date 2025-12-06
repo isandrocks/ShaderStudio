@@ -50,6 +50,47 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [isApplyDropdownOpen, setIsApplyDropdownOpen] = React.useState(false);
 
+  const applyDropdownRef = React.useRef<HTMLDivElement>(null);
+  const moreDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isApplyDropdownOpen &&
+        applyDropdownRef.current &&
+        !applyDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsApplyDropdownOpen(false);
+      }
+      if (
+        isDropdownOpen &&
+        moreDropdownRef.current &&
+        !moreDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isApplyDropdownOpen, isDropdownOpen]);
+
+  const toggleApplyDropdown = () => {
+    if (!isApplyDropdownOpen) {
+      setIsDropdownOpen(false);
+    }
+    setIsApplyDropdownOpen(!isApplyDropdownOpen);
+  };
+
+  const toggleDropdown = () => {
+    if (!isDropdownOpen) {
+      setIsApplyDropdownOpen(false);
+    }
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
   const handleAdvancedEditorClick = () => {
     setIsDropdownOpen(false);
     onAdvancedEditorClick();
@@ -160,7 +201,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* Primary Actions */}
         <div className="flex gap-2 w-full">
-          <div className="relative flex-1">
+          <div className="relative flex-1" ref={applyDropdownRef}>
             <div className="flex gap-0 w-full">
               <button
                 onClick={handleApplyToSelectionClick}
@@ -172,7 +213,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 Apply to Selection
               </button>
               <button
-                onClick={() => setIsApplyDropdownOpen(!isApplyDropdownOpen)}
+                onClick={toggleApplyDropdown}
                 aria-label="Show apply options"
                 className="w-7 h-7 flex items-center justify-center text-white
                   bg-primary rounded-r-md cursor-pointer transition-all
@@ -233,7 +274,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
         {/* Secondary Actions */}
         <div className="flex gap-2 w-full">
-          <div className="relative flex-1">
+          <div className="relative flex-1" ref={moreDropdownRef}>
             <div className="flex gap-0 w-full">
               <button
                 onClick={handleAdvancedEditorClick}
@@ -247,7 +288,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <span>Advanced Editor</span>
               </button>
               <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onClick={toggleDropdown}
                 aria-label="Show more options"
                 className="w-7 h-7 flex items-center justify-center
                   text-gray-300 bg-[#3c3c3c] rounded-r-md cursor-pointer

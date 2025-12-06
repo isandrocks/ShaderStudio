@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import type { DynamicUniform, ShaderState, SavedShader } from "../types";
+import type {
+  DynamicUniform,
+  ShaderState,
+  SavedShader,
+  EffectLayer,
+} from "../types";
 import { renderShader } from "../webgl";
 
 interface SaveShaderModalProps {
@@ -8,10 +13,13 @@ interface SaveShaderModalProps {
   shaderCode: string;
   customFragmentShaderRef: React.MutableRefObject<string | null>;
   dynamicUniforms: DynamicUniform[];
+  layers?: EffectLayer[];
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   shaderStateRef: React.MutableRefObject<ShaderState>;
   getCurrentTime: () => number;
   isPaused: boolean;
+  currentShaderId?: string | null;
+  savedShaders?: SavedShader[];
 }
 
 const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
@@ -20,14 +28,18 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
   shaderCode,
   customFragmentShaderRef,
   dynamicUniforms,
+  layers,
   canvasRef,
   shaderStateRef,
   getCurrentTime,
   isPaused,
+  currentShaderId,
+  savedShaders = [],
 }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [includeThumbnail, setIncludeThumbnail] = useState(true);
+  const [isUpdate, setIsUpdate] = useState(false);
   const [error, setError] = useState("");
   const [isCapturing, setIsCapturing] = useState(false);
   const nameInputRef = React.useRef<HTMLInputElement>(null);
@@ -35,13 +47,33 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
   // Auto-focus name input when modal opens
   React.useEffect(() => {
     if (isOpen) {
+      // Check if we are editing an existing shader
+      if (currentShaderId) {
+        const existingShader = savedShaders.find(
+          (s) => s.id === currentShaderId,
+        );
+        if (existingShader) {
+          setName(existingShader.name);
+          setDescription(existingShader.description || "");
+          setIsUpdate(true);
+        } else {
+          setIsUpdate(false);
+          setName("");
+          setDescription("");
+        }
+      } else {
+        setIsUpdate(false);
+        setName("");
+        setDescription("");
+      }
+
       // Small delay to ensure DOM is ready and previous modal is gone
       const timer = setTimeout(() => {
         nameInputRef.current?.focus();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, currentShaderId, savedShaders]);
 
   if (!isOpen) return null;
 
@@ -105,8 +137,6 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
               return;
             }
 
-            // Check blob size (base64 will be ~33% larger)
-            const estimatedBase64Size = (blob.size * 4) / 3;
 
             // Convert blob to base64 for storage
             const reader = new FileReader();
@@ -163,12 +193,18 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
 
     // Create SavedShader object
     const newShader: SavedShader = {
-      id: `shader-${Date.now()}`,
+      id:
+        isUpdate && currentShaderId ? currentShaderId : `shader-${Date.now()}`,
       name: name.trim(),
       description: description.trim() || undefined,
       fragmentShader: customFragmentShaderRef.current || shaderCode,
       dynamicUniforms: [...dynamicUniforms],
-      createdAt: Date.now(),
+      layers: layers ? JSON.parse(JSON.stringify(layers)) : undefined, // Deep copy layers
+      createdAt:
+        isUpdate && currentShaderId
+          ? savedShaders.find((s) => s.id === currentShaderId)?.createdAt ||
+            Date.now()
+          : Date.now(),
       updatedAt: Date.now(),
       thumbnail,
     };
@@ -243,6 +279,24 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
               {description.length}/200 characters
             </span>
           </div>
+
+          {currentShaderId && (
+            <div className="flex items-center gap-2 p-2 bg-[#383838] rounded border border-[#444444]">
+              <input
+                type="checkbox"
+                id="updateExisting"
+                checked={isUpdate}
+                onChange={(e) => setIsUpdate(e.target.checked)}
+                className="w-4 h-4 cursor-pointer accent-primary"
+              />
+              <label
+                htmlFor="updateExisting"
+                className="text-xs text-white cursor-pointer select-none"
+              >
+                Update existing shader
+              </label>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <input

@@ -57,6 +57,7 @@ const App: React.FC = () => {
 
   // State: shaders
   const [savedShaders, setSavedShaders] = useState<SavedShader[]>([]);
+  const [currentShaderId, setCurrentShaderId] = useState<string | null>(null);
   const [shaderCode, setShaderCode] = useState(
     SHADER_PRESETS[0].fragmentShader,
   );
@@ -140,6 +141,8 @@ const App: React.FC = () => {
       shaderStateRef,
       handleShaderUpdate, // Use helper to update base as well
       setDynamicUniforms,
+      setLayers,
+      setCurrentShaderId,
       setShaderError,
       setCriticalError,
     );
@@ -527,10 +530,13 @@ const App: React.FC = () => {
         shaderCode={shaderCode}
         customFragmentShaderRef={customFragmentShaderRef}
         dynamicUniforms={dynamicUniforms}
+        layers={layers}
         canvasRef={canvasRef}
         shaderStateRef={shaderStateRef}
         getCurrentTime={getCurrentTime}
         isPaused={params.paused}
+        currentShaderId={currentShaderId}
+        savedShaders={savedShaders}
       />
 
       <SavedShadersGallery
@@ -552,6 +558,26 @@ const App: React.FC = () => {
         onClose={() => setOpenModal("none")}
         onGenerate={handleAiGenerate}
       />
+
+            {/* Exporting Video Spinner Overlay */}
+      {isExportingVideo && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center
+            z-50"
+        >
+          <div
+            className="bg-[#2a2a2a] rounded-lg p-6 flex flex-col items-center
+              gap-4 border border-[#3c3c3c]"
+          >
+            <div
+              className="w-12 h-12 border-4 border-primary border-t-transparent
+                rounded-full animate-spin"
+            ></div>
+            <div className="text-gray-300 font-medium">Exporting Video...</div>
+            <div className="text-xs text-gray-500">This may take a moment</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

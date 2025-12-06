@@ -1,5 +1,10 @@
 import { RefObject } from "react";
-import type { SavedShader, ShaderState, DynamicUniform } from "../types";
+import type {
+  SavedShader,
+  ShaderState,
+  DynamicUniform,
+  EffectLayer,
+} from "../types";
 import type { ShaderPreset } from "../presets";
 import { ensureUniformTypes } from "../utils/shaderUtils";
 import { buildFragmentSource, recompileShader } from "../webgl";
@@ -9,6 +14,8 @@ export const createShaderLoadHandlers = (
   shaderStateRef: RefObject<ShaderState>,
   setShaderCode: (code: string) => void,
   setDynamicUniforms: React.Dispatch<React.SetStateAction<DynamicUniform[]>>,
+  setLayers: React.Dispatch<React.SetStateAction<EffectLayer[]>>,
+  setCurrentShaderId: React.Dispatch<React.SetStateAction<string | null>>,
   setShaderError: (error: string) => void,
   setCriticalError: (error: string | null) => void,
 ) => {
@@ -17,6 +24,8 @@ export const createShaderLoadHandlers = (
       customFragmentShaderRef.current = preset.fragmentShader;
       setShaderCode(preset.fragmentShader);
       setDynamicUniforms(ensureUniformTypes(preset.defaultUniforms));
+      setLayers([]); // Clear layers when loading a preset
+      setCurrentShaderId(null); // Presets are not saved shaders
       setShaderError("");
     } catch (error) {
       console.error("[loadPreset] Error:", error);
@@ -31,6 +40,8 @@ export const createShaderLoadHandlers = (
 
       const uniformsWithTypes = ensureUniformTypes(shader.dynamicUniforms);
       setDynamicUniforms(uniformsWithTypes);
+      setLayers(shader.layers || []); // Restore layers or clear if none
+      setCurrentShaderId(shader.id);
       setShaderError("");
 
       // Recompile shader

@@ -61,6 +61,7 @@ GLSL Requirements:
 - Do NOT use 'iMouse'
 - Output to 'gl_FragColor'
 - Ensure the code is valid WebGL 1.0 GLSL.
+- IMPORTANT: You MUST define a 'vec4 col' variable for the color and end the main function with 'gl_FragColor = col;'.
 
 Uniform Requirements:
 - Create 2 or more dynamic uniforms for the most important parameters (speed, color, size, position, etc).

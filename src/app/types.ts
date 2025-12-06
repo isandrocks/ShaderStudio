@@ -55,6 +55,7 @@ export interface SavedShader {
   description?: string;
   fragmentShader: string;
   dynamicUniforms: DynamicUniform[];
+  layers?: EffectLayer[];
   createdAt: number;
   updatedAt: number;
   thumbnail?: string;
