@@ -53,17 +53,31 @@ void main() {
   // --- CLEANUP STEP ---
   // Remove any previously injected Layer System code to prevent duplication errors
   // 1. Strip Globals (from marker to void main)
-  base = base.replace(
-    /\/\/ --- Layer System Globals ---[\s\S]*?(?=void main\(\))/g,
-    "",
-  );
+  if (base.includes("// --- End Layer System Globals ---")) {
+    base = base.replace(
+      /\/\/ --- Layer System Globals ---[\s\S]*?\/\/ --- End Layer System Globals ---\n?/g,
+      "",
+    );
+  } else {
+    base = base.replace(
+      /\/\/ --- Layer System Globals ---[\s\S]*?(?=void main\(\))/g,
+      "",
+    );
+  }
 
   // 2. Strip Composition (from marker to gl_FragColor)
   // We need to be careful not to delete the gl_FragColor line itself, just the block before it.
-  base = base.replace(
-    /\s*\/\/ --- Layer System Composition ---[\s\S]*?(?=\s*gl_FragColor\s*=)/g,
-    "",
-  );
+  if (base.includes("// --- End Layer System Composition ---")) {
+    base = base.replace(
+      /\s*\/\/ --- Layer System Composition ---[\s\S]*?\/\/ --- End Layer System Composition ---\n?/g,
+      "",
+    );
+  } else {
+    base = base.replace(
+      /\s*\/\/ --- Layer System Composition ---[\s\S]*?(?=\s*gl_FragColor\s*=)/g,
+      "",
+    );
+  }
 
   // 3. Strip Layer Uniforms
   // Matches both new short IDs (u_LXXXX_...) and old long IDs (u_layer_...)
@@ -94,6 +108,7 @@ void main() {
   usedTemplates.forEach((t) => {
     headerInjection += `\n// ${t.name}\n${t.glslFunction}\n`;
   });
+  headerInjection += `// --- End Layer System Globals ---\n`;
 
   // Insert headers before main
   let newShader =
@@ -160,6 +175,7 @@ void main() {
       // Let's assume the target is `col`.
       layerLogic += `    col = vec4(finalColor_LS, 1.0);\n`;
     }
+    layerLogic += `    // --- End Layer System Composition ---\n`;
 
     newShader =
       newShader.slice(0, insertionPoint) +
