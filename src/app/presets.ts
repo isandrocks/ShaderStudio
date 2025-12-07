@@ -142,6 +142,47 @@ void main() {
       },
     ],
   },
+      {
+    id: "blank",
+    name: "Blank Shader",
+    description: "A blank shader with no effects",
+    category: "effects",
+    thumbnail: "",
+    fragmentShader: `precision mediump float;
+uniform vec2 iResolution;
+uniform float iTime;
+uniform vec3 uColor1;
+uniform float uFloat1;
+
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+
+    vec4 col = vec4(uColor1, uFloat1);
+
+    gl_FragColor = col;
+}`,
+    defaultUniforms: [
+      {
+        id: "preset-color",
+        type: "vec3",
+        name: "uColor1",
+        value: [0.2, 0.5, 0.8],
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        id: "preset-float1",
+        type: "float",
+        name: "uFloat1",
+        value: 0.5,
+        min: 0.1,
+        max: 1,
+        step: 0.05,
+      },
+    ],
+  },
   {
     id: "simple-wave",
     name: "Simple Wave",

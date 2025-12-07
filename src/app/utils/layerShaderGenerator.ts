@@ -116,7 +116,7 @@ void main() {
     const outputVar = lastMatch[1].trim(); // e.g. "col" or "vec4(1.0)"
 
     let layerLogic = `\n    // --- Layer System Composition ---\n`;
-    layerLogic += `    vec3 finalColor = ${outputVar}.xyz;\n`; // Start with current color
+    layerLogic += `    vec3 finalColor_LS = ${outputVar}.xyz;\n`; // Start with current color
 
     layers.forEach((layer, index) => {
       if (!layer.visible) return;
@@ -138,16 +138,16 @@ void main() {
         layer.blendMode.charAt(0).toUpperCase() + layer.blendMode.slice(1);
       const blendFunc = `blend${blendModeCapitalized}`;
 
-      layerLogic += `    finalColor = ${blendFunc}(finalColor, layer${index}, ${opacityUniform});\n\n`;
+      layerLogic += `    finalColor_LS = ${blendFunc}(finalColor_LS, layer${index}, ${opacityUniform});\n\n`;
     });
 
     // Update the output variable if it's a variable (like 'col')
     // If it's an expression (like 'vec4(1.0)'), we can't assign to it.
-    // The user said "set col = vec4(finalColor, 1.0);"
+    // The user said "set col = vec4(finalColor_LS, 1.0);"
     // So we assume the output var is 'col'.
 
     if (outputVar === "col") {
-      layerLogic += `    col = vec4(finalColor, 1.0);\n`;
+      layerLogic += `    col = vec4(finalColor_LS, 1.0);\n`;
     } else {
       // Fallback: redefine gl_FragColor assignment?
       // Or create 'col' if it doesn't exist?
@@ -155,10 +155,10 @@ void main() {
       // We should probably just replace the assignment value.
 
       // But the user specifically asked for:
-      // "add its code directly able above that line and set 'col = vec4(finalColor, 1.0);' at the end"
+      // "add its code directly able above that line and set 'col = vec4(finalColor_LS, 1.0);' at the end"
 
       // Let's assume the target is `col`.
-      layerLogic += `    col = vec4(finalColor, 1.0);\n`;
+      layerLogic += `    col = vec4(finalColor_LS, 1.0);\n`;
     }
 
     newShader =

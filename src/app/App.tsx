@@ -51,7 +51,9 @@ const App: React.FC = () => {
   // State: modals
   const [openModal, setOpenModal] = useState<ModalType>("none");
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-  const [videoExportMode, setVideoExportMode] = useState<"export" | "apply">("export");
+  const [videoExportMode, setVideoExportMode] = useState<"export" | "apply">(
+    "export",
+  );
   const [isExportingVideo, setIsExportingVideo] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -581,7 +583,7 @@ const App: React.FC = () => {
         onGenerate={handleAiGenerate}
       />
 
-            {/* Exporting Video Spinner Overlay */}
+      {/* Exporting Video Spinner Overlay */}
       {isExportingVideo && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center

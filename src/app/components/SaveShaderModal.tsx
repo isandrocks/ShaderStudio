@@ -137,7 +137,6 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
               return;
             }
 
-
             // Convert blob to base64 for storage
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -281,7 +280,10 @@ const SaveShaderModal: React.FC<SaveShaderModalProps> = ({
           </div>
 
           {currentShaderId && (
-            <div className="flex items-center gap-2 p-2 bg-[#383838] rounded border border-[#444444]">
+            <div
+              className="flex items-center gap-2 p-2 bg-[#383838] rounded border
+                border-[#444444]"
+            >
               <input
                 type="checkbox"
                 id="updateExisting"

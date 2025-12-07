@@ -210,6 +210,62 @@ vec3 noisePattern(vec2 uv, vec3 color, float scale, float time) {
       },
     },
   },
+  {
+    id: "plasma",
+    name: "Plasma",
+    type: "pattern",
+    icon: <NoiseIcon className="w-6 h-6" />,
+    description: "Colorful plasma pattern",
+    glslFunction: `
+vec3 plasmaPattern(vec2 uv, vec3 color, float scale, float spin, float time) {
+    vec2 pos = uv;
+
+    float angle = spin * time * 0.1;
+    float s = sin(angle);
+    float c = cos(angle);
+    pos = mat2(c, -s, s, c) * pos;
+
+    pos *= scale;
+
+    pos.x += sin(pos.y * 0.5 + spin);
+    pos.y += sin(pos.x * 0.5 + spin * 1.5);
+
+    float v1 = sin(pos.x + time);
+    float v2 = sin(pos.y + time);
+    float v3 = sin((pos.x + pos.y) + time);
+    float v4 = sin(sqrt(pos.x * pos.x + pos.y * pos.y) + time);
+
+    float plasma = (v1 + v2 + v3 + v4) / 4.0;
+    float intensity = plasma * 0.5 + 0.5;
+    vec3 rColor = color * intensity;
+    return rColor;
+}
+`,
+    glslCall: "plasmaPattern(uv, {color}, {scale}, {spin}, iTime)",
+    defaultProperties: {
+      color: {
+        value: [1.0, 1.0, 1.0],
+        type: "vec3",
+        label: "Color",
+      },
+      scale: {
+        value: 15.0,
+        type: "float",
+        min: 1.0,
+        max: 50.0,
+        step: 1.0,
+        label: "Scale",
+      },
+         spin: {
+        value: 0.3,
+        type: "float",
+        min: 0.0,
+        max: 10.0,
+        step: 0.1,
+        label: "Spin",
+      },
+    },
+  },
   // ==========================================================================
   // NEW TEMPLATES
   // ==========================================================================
