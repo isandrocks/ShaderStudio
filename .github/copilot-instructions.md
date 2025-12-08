@@ -1,6 +1,8 @@
 # GLSL Texture & Shaders Figma Plugin
 
-> **Recent Refactorings (November 2025):** Major architectural refactoring completed. App.tsx reduced from 640 to 294 lines (54% reduction) through extraction of business logic into modular hooks and handlers. Codebase now follows clean separation of concerns with App.tsx serving purely as component composition and layout. All files adhere to 550-line maximum guideline.
+> **Recent Refactorings (November 2025):** Major architectural refactoring completed. App.tsx reduced from 640 to ~294 lines (54% reduction) through extraction of business logic into modular hooks and handlers. Codebase now follows clean separation of concerns with App.tsx serving purely as component composition and layout. All files adhere to 550-line maximum guideline.
+
+> **Update (December 2025):** App.tsx has grown to ~610 lines due to the addition of the Layer Builder, AI Generation, and Video Export features. Future refactoring should aim to split these new features into their own sub-components to return to the <300 line goal.
 
 > **Documentation Note:** All refactoring summaries, migration guides, and change documentation should be stored in the `change logs/` folder. Do NOT create summary documents in the root directory or other locations.
 
@@ -9,6 +11,8 @@
 This is a Figma plugin that renders GLSL shaders in WebGL and applies them as image fills to rectangles. The plugin uses a **two-process architecture** with a **React + Tailwind CSS v4** frontend. It features two distinct editing modes:
 1.  **Code Mode**: Direct GLSL editing with dynamic uniforms
 2.  **Layer Builder**: Visual composition of effects (gradients, noise, shapes) without coding
+
+It also includes **AI Shader Generation** using Google Gemini models and **Video Export** capabilities.
 
 1. **Plugin sandbox** (`src/plugin/controller.ts` → `dist/code.js`): Runs in Figma's restricted environment with access to the Figma API
 2. **UI iframe** (React app in `src/app/` → `dist/ui.html`): Runs in a browser context with full DOM/WebGL access but no Figma API access
@@ -23,6 +27,7 @@ Communication flows via `postMessage` between the two contexts:
 - **TypeScript 5.3**: Type-safe development with JSX support
 - **Webpack 4**: Module bundler with PostCSS v4 integration
 - **WebGL**: Real-time GLSL shader rendering
+- **react-colorful ^5.6.1**: Lightweight color picker component
 
 ### Design System
 The UI follows **Figma's dark theme** design patterns:
@@ -59,7 +64,7 @@ The `dist/` folder is **git-ignored** and generated on each build.
 ## Code Organization Principles
 
 ### File Size Guidelines
-**CRITICAL**: Files must be refactored when they exceed **550 lines**. This ensures:
+**CRITICAL**: Files must be refactored when they exceed **750 lines**. This ensures:
 - Maintainability and readability
 - Logical separation of concerns
 - Easier testing and debugging
@@ -82,17 +87,19 @@ The `dist/` folder is **git-ignored** and generated on each build.
 - ❌ NO WebGL code
 - ❌ NO API calls
 
-**Current App.tsx structure** (294 lines):
+**Current App.tsx structure** (~610 lines):
 ```tsx
 import { hooks } from "./hooks";
 import { handlers } from "./handlers";
+// ... imports for AiGenerationModal, VideoExportModal, LayerPanel, etc.
 
 const App: React.FC = () => {
-  // State declarations (60 lines)
+  // State declarations (100+ lines)
   const [state] = useState(...)
   const [viewMode, setViewMode] = useState<"builder" | "code">("code");
+  const [layers, setLayers] = useState<EffectLayer[]>([]);
   
-  // Refs (20 lines)
+  // Refs (30 lines)
   const ref = useRef(...)
   
   // Hooks (40 lines)
@@ -102,11 +109,14 @@ const App: React.FC = () => {
   // Lifecycle (20 lines)
   useShaderLifecycle(...)
   
-  // JSX layout (150 lines)
+  // JSX layout (300+ lines)
   return (
     <div>
+      {/* Toolbar with AI, Video, Help buttons */}
       {viewMode === "builder" ? <LayerPanel /> : <ControlPanel />}
       <ShaderCanvas />
+      <AiGenerationModal />
+      <VideoExportModal />
     </div>
   );
 };
@@ -118,15 +128,17 @@ The codebase is organized into clear domains:
 
 ```
 src/app/
-├── App.tsx                    # Component composition ONLY (294 lines)
-├── components/                # UI components (each <350 lines)
+├── App.tsx                    # Component composition (610 lines)
+├── components/                # UI components
 │   ├── color-picker/         # Modular color picker (6 files)
 │   ├── layers/               # Layer Builder components
 │   │   ├── LayerPanel.tsx    # Main layer list interface
 │   │   ├── LayerProperties.tsx # Layer settings
 │   │   └── EffectPicker.tsx  # Effect selection modal
 │   ├── video-export/         # Video export utilities
-│   └── [28 component files]
+│   ├── AiGenerationModal.tsx # AI Shader Generation
+│   ├── VideoExportModal.tsx  # Video Export Settings
+│   └── [30+ component files]
 ├── hooks/                     # Custom React hooks
 │   ├── useShaderEngine.ts    # WebGL rendering engine (175 lines)
 │   ├── useShaderLifecycle.ts # Lifecycle & message handling (189 lines)
@@ -158,7 +170,7 @@ src/app/
 Component hierarchy:
 
 ```
-App.tsx (Pure composition - NO business logic)
+App.tsx (Composition & Layout)
 ├── ControlPanel (Code Mode Sidebar)
 │   ├── SliderControl × N (Float uniforms)
 │   └── ColorControl × N (Color pickers)
@@ -172,7 +184,8 @@ App.tsx (Pure composition - NO business logic)
 ├── PresetGallery (Browse shader presets)
 ├── SaveShaderModal (Save custom shader)
 ├── SavedShadersGallery (Load/delete saved shaders)
-└── VideoExportModal (Export video settings)
+├── VideoExportModal (Export video settings)
+└── AiGenerationModal (AI Shader Generation)
 ```
 
 ### State Management Pattern
@@ -308,9 +321,14 @@ src/
 │   │   │   ├── ColorPickerInput.tsx # Hex input field
 │   │   │   ├── utils.ts             # RGB/HSV conversions
 │   │   │   └── index.ts             # Exports
+│   │   ├── layers/                  # Layer Builder components
+│   │   │   ├── LayerPanel.tsx       # Main layer list interface
+│   │   │   ├── LayerProperties.tsx  # Layer settings
+│   │   │   └── EffectPicker.tsx     # Effect selection modal
 │   │   ├── video-export/            # Video export module
 │   │   │   ├── videoExportUtils.ts  # Export pipeline (289 lines)
 │   │   │   └── index.ts             # Exports
+│   │   ├── AiGenerationModal.tsx    # AI Shader Generation
 │   │   ├── BaseModal.tsx            # Reusable modal component
 │   │   ├── ColorControl.tsx         # Color uniform control (100 lines)
 │   │   ├── ControlPanel.tsx         # Left sidebar controls
@@ -330,19 +348,22 @@ src/
 │   │   └── index.ts                 # Hook exports
 │   ├── handlers/                     # Business logic factories
 │   │   ├── uniformHandlers.ts       # Uniform CRUD (60 lines)
+│   │   ├── layerHandlers.ts         # Layer CRUD (80 lines)
 │   │   ├── shaderLoadHandlers.ts    # Preset/shader loading (70 lines)
 │   │   ├── figmaHandlers.ts         # Figma API (50 lines)
 │   │   ├── modalHandlers.ts         # Modal operations (50 lines)
 │   │   ├── videoExportHandler.ts    # Video export (50 lines)
 │   │   └── index.ts                 # Handler exports
 │   ├── utils/                        # Pure utility functions
-│   │   └── shaderUtils.ts           # Shader utilities (110 lines)
+│   │   ├── shaderUtils.ts           # Shader utilities (110 lines)
+│   │   └── layerShaderGenerator.ts  # Layer composition logic (175 lines)
 │   ├── generated/                    # Auto-generated files
 │   │   └── preset-thumbnails.ts     # Preset images (large)
-│   ├── App.tsx                       # Component composition ONLY (294 lines)
+│   ├── App.tsx                       # Component composition (610 lines)
 │   ├── webgl.ts                      # WebGL core logic (240 lines)
 │   ├── types.ts                      # TypeScript definitions
 │   ├── presets.ts                    # Shader presets with metadata
+│   ├── layerTemplates.tsx            # Layer effect definitions
 │   ├── shaders.ts                    # GLSL source constants
 │   ├── constants.ts                  # App constants
 │   ├── styles.css                    # Tailwind CSS v4
@@ -361,9 +382,9 @@ dist/                                 # Build output (git-ignored)
 
 ### Core Application Files
 
-**`src/app/App.tsx`** (294 lines) - **COMPOSITION ONLY**
+**`src/app/App.tsx`** (610 lines) - **COMPOSITION & LAYOUT**
 - ✅ Import statements (hooks, handlers, components)
-- ✅ State declarations with `useState`
+- ✅ State declarations with `useState` (includes Layer Builder & AI state)
 - ✅ Ref declarations with `useRef`
 - ✅ Synced refs with `useSyncedRef`
 - ✅ Hook calls (`useShaderEngine`, `useShaderLifecycle`)
@@ -1000,6 +1021,6 @@ return <MyComponent prop={value} />;
 
 ---
 
-**Last Updated:** November 25, 2025
+**Last Updated:** December 2025
 **Document Version:** 2.0 (Post-refactoring)
 **Codebase State:** Modular architecture with 54% App.tsx reduction

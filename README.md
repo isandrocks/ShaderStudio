@@ -104,6 +104,20 @@ Then in Figma:
 3. Click preset card to load shader
 4. Modify uniforms and shader code as needed
 
+### Using Layer Builder (Visual Mode)
+
+Create complex effects by stacking layers without writing code.
+
+1. Switch the toggle at the top from **Code** to **Builder**.
+2. Click **+ Add Layer** to open the effect picker.
+3. Choose an effect (e.g., "Gradient", "Perlin Noise", "Circle").
+4. **Drag and drop** layers to reorder them (top layers blend over bottom ones).
+5. Adjust layer properties:
+   - **Blend Mode**: Screen, Overlay, Multiply, etc.
+   - **Opacity**: Transparency of the layer.
+   - **Effect Parameters**: Specific controls for the effect (Scale, Color, Speed).
+6. The shader code is automatically generated in the background.
+
 ### AI Shader Generation
 
 Generate custom GLSL shaders using Google's Gemini AI models.
@@ -138,7 +152,7 @@ Communication via `postMessage` between contexts.
 
 The codebase follows **clean separation of concerns**:
 
-- **App.tsx (294 lines)**: Pure component composition and layout - no business logic
+- **App.tsx (~610 lines)**: Component composition and layout (includes Layer Builder & AI state)
 - **Custom Hooks** (`hooks/`): Stateful logic, lifecycle management, WebGL rendering engine
 - **Handler Factories** (`handlers/`): Business logic with dependency injection for testability
 - **Components** (`components/`): UI rendering only, including modular color picker
