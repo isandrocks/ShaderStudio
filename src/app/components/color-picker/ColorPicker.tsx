@@ -57,7 +57,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
   return (
     <div
-      className="w-60 p-3 bg-[#1e1e1e] rounded-[13px]
+      className="w-60 p-3 bg-[#1e1e1e] rounded-md
         shadow-[0_0_0.5px_rgba(0,0,0,0.12),0_10px_16px_rgba(0,0,0,0.12),0_2px_5px_rgba(0,0,0,0.15)]"
     >
       {/* Color area */}
