@@ -147,7 +147,7 @@ void main() {
     name: "Blank Shader",
     description: "A blank shader with no effects",
     category: "effects",
-    thumbnail: "",
+    thumbnail: PRESET_THUMBNAILS["blank"],
     fragmentShader: `precision mediump float;
 uniform vec2 iResolution;
 uniform float iTime;
@@ -167,7 +167,7 @@ void main() {
         id: "preset-color",
         type: "vec3",
         name: "uColor1",
-        value: [0.2, 0.5, 0.8],
+        value: [0.5, 0.5, 0.5],
         min: 0,
         max: 1,
         step: 0.01,
@@ -181,6 +181,67 @@ void main() {
         max: 1,
         step: 0.05,
       },
+    ],
+  },
+      {
+    id: "satin",
+    name: "Satin Shader",
+    description: "A smooth satin-like shader",
+    category: "waves",
+    thumbnail: PRESET_THUMBNAILS["satin"],
+    fragmentShader: `precision mediump float;
+  uniform vec3 uColor1;
+  uniform float uSpeed;
+  uniform float uScale;
+  uniform vec2 iResolution;
+  uniform float iTime; 
+
+void main() {
+  vec2 st = gl_FragCoord.xy/iResolution.xy;
+  float mr = min(iResolution.x, iResolution.y);
+  vec2 uv = (st.xy * 2.0 - 1.0) * iResolution.xy / mr;
+  uv *= (1.0-uScale) * 2.;
+  float d = -iTime * 0.5 * uSpeed;
+  float a = 0.0;
+  for (float i = 0.0; i < 8.0; ++i) {
+    a += cos(i - d - a * uv.x);
+    d += sin(uv.y * i + a);
+  }
+  d += iTime * 0.5 * uSpeed;
+  vec3 color_v1 = vec3(cos(uv * vec2(d, a)) * 0.6 + 0.4, cos(a + d) * 0.5 + 0.5);
+  color_v1 = cos(color_v1 * cos(vec3(d, a, 2.5)) * 0.5 + 0.5) * uColor1;
+  vec4 col = vec4(color_v1, 1.0);
+
+    gl_FragColor = col;
+}`,
+    defaultUniforms: [
+      {
+        id: "preset-color",
+        type: "vec3",
+        name: "uColor1",
+        value: [0.58, 0.01, 0.0],
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        id: "preset-speed",
+        type: "float",
+        name: "uSpeed",
+        value: 0.5,
+        min: 0.1,
+        max: 1,
+        step: 0.05,
+      },
+      {
+        id: "preset-scale",
+        type: "float",
+        name: "uScale",
+        value: 0.5,
+        min: 0.1,
+        max: 1,
+        step: 0.05,
+      }
     ],
   },
   {

@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import type { SavedShader } from "../types";
 import DeleteIcon from "./icons/DeleteIcon";
+import ImportIcon from "./icons/ImportIcon";
+import ExportIcon from "./icons/ExportIcon";
 
 interface SavedShadersGalleryProps {
   isOpen: boolean;
@@ -21,8 +23,72 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
 }) => {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const handleExport = (e: React.MouseEvent, shader: SavedShader) => {
+    e.stopPropagation();
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(shader, null, 2));
+    const downloadAnchorNode = document.createElement("a");
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute(
+      "download",
+      `${shader.name.replace(/\s+/g, "_")}.json`
+    );
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importedShader = JSON.parse(content) as SavedShader;
+
+        // Basic validation
+        if (!importedShader.fragmentShader || !importedShader.dynamicUniforms) {
+          alert("Invalid shader file");
+          return;
+        }
+
+        // Ensure unique ID for import
+        const newShader = {
+          ...importedShader,
+          id: `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: `${importedShader.name} (Imported)`,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        // Save to storage
+        parent.postMessage(
+          { pluginMessage: { type: "save-shader", shader: newShader } },
+          "*"
+        );
+
+        // Reset input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } catch (err) {
+        console.error("Failed to import shader", err);
+        alert("Failed to parse shader file");
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const sortedShaders = [...savedShaders].sort((a, b) => {
     if (sortBy === "name") return a.name.localeCompare(b.name);
@@ -82,7 +148,26 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
           className="flex items-center justify-between p-4 border-b
             border-[#3c3c3c]"
         >
-          <h2 className="text-xl font-bold text-white">My Shaders</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-white">My Shaders</h2>
+            <button
+              onClick={handleImportClick}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded
+                bg-[#3c3c3c] text-white hover:bg-[#4c4c4c] transition-colors"
+              title="Import Shader JSON"
+            >
+              <ImportIcon className="w-3 h-3" />
+              Import
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".json"
+              className="hidden"
+              aria-label="Import shader"
+            />
+          </div>
           <button
             onClick={onClose}
             className="text-[#999999] hover:text-white transition-colors
@@ -228,17 +313,31 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={(e) => handleDeleteClick(e, shader.id)}
-                      className="absolute bottom-7 right-7 opacity-0
-                        group-hover:opacity-100 transition-all p-2"
-                      title="Delete shader"
+                    <div
+                      className="absolute top-3 right-7 opacity-0
+                        group-hover:opacity-100 transition-all flex-row-reverse gap-2"
                     >
-                      <DeleteIcon
-                        className="h-7 cursor-pointer p-1 rounded-lg
-                          transition-all hover:bg-red-900/40"
-                      />
-                    </button>
+                      <button
+                        onClick={(e) => handleExport(e, shader)}
+                        className="p-2 pr-5"
+                        title="Export shader"
+                      >
+                        <ExportIcon
+                          className="absolute h-7 cursor-pointer p-1 rounded-lg
+                            transition-all hover:bg-[#3c3c3c] text-white"
+                        />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, shader.id)}
+                        className="p-2"
+                        title="Delete shader"
+                      >
+                        <DeleteIcon
+                          className="h-7 cursor-pointer p-1 rounded-lg
+                            transition-all hover:bg-red-900"
+                        />
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
