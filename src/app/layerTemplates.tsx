@@ -19,14 +19,15 @@ export const LAYER_TEMPLATES: EffectTemplate[] = [
     icon: <LinearGradientIcon className="w-6 h-6" />,
     description: "Simple two-color linear gradient",
     glslFunction: `
-vec3 linearGradient(vec2 uv, vec3 color1, vec3 color2, float angle) {
+vec4 linearGradient(vec2 uv, vec3 color1, vec3 color2, float angle, float alpha) {
     float rad = radians(angle);
     vec2 dir = vec2(cos(rad), sin(rad));
     float t = dot(uv - 0.5, dir) + 0.5;
-    return mix(color1, color2, clamp(t, 0.0, 1.0));
+    vec3 col = mix(color1, color2, clamp(t, 0.0, 1.0));
+    return vec4(col, alpha);
 }
 `,
-    glslCall: "linearGradient(uv, {color1}, {color2}, {angle})",
+    glslCall: "linearGradient(uv, {color1}, {color2}, {angle}, {alpha})",
     defaultProperties: {
       color1: {
         value: [0.1, 0.3, 0.8],
@@ -46,6 +47,14 @@ vec3 linearGradient(vec2 uv, vec3 color1, vec3 color2, float angle) {
         step: 1,
         label: "Angle",
       },
+      alpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Alpha",
+      },
     },
   },
   {
@@ -55,14 +64,15 @@ vec3 linearGradient(vec2 uv, vec3 color1, vec3 color2, float angle) {
     icon: <RadialGradientIcon className="w-6 h-6" />,
     description: "Circular gradient from center",
     glslFunction: `
-vec3 radialGradient(vec2 uv, vec3 centerColor, vec3 outerColor, float radius, vec2 center) {
+vec4 radialGradient(vec2 uv, vec3 centerColor, vec3 outerColor, float radius, vec2 center, float alpha) {
     float d = distance(uv, center);
     float t = smoothstep(0.0, radius, d);
-    return mix(centerColor, outerColor, clamp(t, 0.0, 1.0));
+    vec3 col = mix(centerColor, outerColor, clamp(t, 0.0, 1.0));
+    return vec4(col, alpha);
 }
 `,
     glslCall:
-      "radialGradient(uv, {centerColor}, {outerColor}, {radius}, {center}.xy)",
+      "radialGradient(uv, {centerColor}, {outerColor}, {radius}, {center}.xy, {alpha})",
     defaultProperties: {
       centerColor: {
         value: [1.0, 0.8, 0.2],
@@ -87,6 +97,14 @@ vec3 radialGradient(vec2 uv, vec3 centerColor, vec3 outerColor, float radius, ve
         type: "vec2",
         label: "Center",
       },
+      alpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Alpha",
+      },
     },
   },
 
@@ -100,10 +118,10 @@ vec3 radialGradient(vec2 uv, vec3 centerColor, vec3 outerColor, float radius, ve
     icon: <CircleIcon className="w-6 h-6" />,
     description: "Basic circle shape",
     glslFunction: `
-vec3 circleShape(vec2 uv, vec3 color, float radius, vec2 center, float softness) {
+vec4 circleShape(vec2 uv, vec3 color, float radius, vec2 center, float softness) {
     float d = distance(uv, center);
     float alpha = 1.0 - smoothstep(radius - softness, radius, d);
-    return color * alpha;
+    return vec4(color, alpha);
 }
 `,
     glslCall: "circleShape(uv, {color}, {radius}, {center}, {softness})",
@@ -147,13 +165,14 @@ vec3 circleShape(vec2 uv, vec3 color, float radius, vec2 center, float softness)
     icon: <CheckerboardIcon className="w-6 h-6" />,
     description: "Tiled checkerboard pattern",
     glslFunction: `
-vec3 checkerboard(vec2 uv, vec3 color1, vec3 color2, float scale) {
+vec4 checkerboard(vec2 uv, vec3 color1, vec3 color2, float scale, float alpha) {
     vec2 pos = floor(uv * scale);
     float pattern = mod(pos.x + pos.y, 2.0);
-    return mix(color1, color2, pattern);
+    vec3 col = mix(color1, color2, pattern);
+    return vec4(col, alpha);
 }
 `,
-    glslCall: "checkerboard(uv, {color1}, {color2}, {scale})",
+    glslCall: "checkerboard(uv, {color1}, {color2}, {scale}, {alpha})",
     defaultProperties: {
       color1: {
         value: [0.0, 0.0, 0.0],
@@ -173,6 +192,14 @@ vec3 checkerboard(vec2 uv, vec3 color1, vec3 color2, float scale) {
         step: 1.0,
         label: "Scale",
       },
+      alpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Alpha",
+      },
     },
   },
   {
@@ -186,14 +213,14 @@ float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
 }
 
-vec3 noisePattern(vec2 uv, vec3 color, float scale, float time) {
+vec4 noisePattern(vec2 uv, vec3 color, float scale, float time, float alpha) {
     vec2 pos = uv * scale;
     // Animate noise by adding time to position
     float n = random(floor(pos) + time * 0.1); 
-    return color * n;
+    return vec4(color * n, alpha);
 }
 `,
-    glslCall: "noisePattern(uv, {color}, {scale}, iTime)",
+    glslCall: "noisePattern(uv, {color}, {scale}, iTime, {alpha})",
     defaultProperties: {
       color: {
         value: [1.0, 1.0, 1.0],
@@ -208,6 +235,14 @@ vec3 noisePattern(vec2 uv, vec3 color, float scale, float time) {
         step: 1.0,
         label: "Scale",
       },
+      alpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Alpha",
+      },
     },
   },
   {
@@ -217,7 +252,7 @@ vec3 noisePattern(vec2 uv, vec3 color, float scale, float time) {
     icon: <NoiseIcon className="w-6 h-6" />,
     description: "Colorful plasma pattern",
     glslFunction: `
-vec3 plasmaPattern(vec2 uv, vec3 color, float scale, float spin, float time) {
+vec4 plasmaPattern(vec2 uv, vec3 color, float scale, float spin, float time, float alpha) {
     vec2 pos = uv;
 
     float angle = spin * time * 0.1;
@@ -238,10 +273,10 @@ vec3 plasmaPattern(vec2 uv, vec3 color, float scale, float spin, float time) {
     float plasma = (v1 + v2 + v3 + v4) / 4.0;
     float intensity = plasma * 0.5 + 0.5;
     vec3 rColor = color * intensity;
-    return rColor;
+    return vec4(rColor, alpha);
 }
 `,
-    glslCall: "plasmaPattern(uv, {color}, {scale}, {spin}, iTime)",
+    glslCall: "plasmaPattern(uv, {color}, {scale}, {spin}, iTime, {alpha})",
     defaultProperties: {
       color: {
         value: [1.0, 1.0, 1.0],
@@ -264,6 +299,14 @@ vec3 plasmaPattern(vec2 uv, vec3 color, float scale, float spin, float time) {
         step: 0.1,
         label: "Spin",
       },
+      alpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Alpha",
+      },
     },
   },
   // ==========================================================================
@@ -276,13 +319,14 @@ vec3 plasmaPattern(vec2 uv, vec3 color, float scale, float spin, float time) {
     icon: <RectangleIcon className="w-6 h-6" />,
     description: "Grid lines pattern",
     glslFunction: `
-vec3 gridPattern(vec2 uv, vec3 color1, vec3 color2, float scale, float thickness) {
+vec4 gridPattern(vec2 uv, vec3 color1, vec3 color2, float scale, float thickness, float alpha) {
     vec2 grid = fract(uv * scale);
     float line = step(thickness, grid.x) * step(thickness, grid.y);
-    return mix(color1, color2, line);
+    vec3 col = mix(color1, color2, line);
+    return vec4(col, alpha);
 }
 `,
-    glslCall: "gridPattern(uv, {color1}, {color2}, {scale}, {thickness})",
+    glslCall: "gridPattern(uv, {color1}, {color2}, {scale}, {thickness}, {alpha})",
     defaultProperties: {
       color1: {
         value: [0.5, 0.5, 0.5],
@@ -310,6 +354,14 @@ vec3 gridPattern(vec2 uv, vec3 color1, vec3 color2, float scale, float thickness
         step: 0.01,
         label: "Thickness",
       },
+      alpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Alpha",
+      },
     },
   },
   {
@@ -319,13 +371,14 @@ vec3 gridPattern(vec2 uv, vec3 color1, vec3 color2, float scale, float thickness
     icon: <VideoIcon className="w-6 h-6" />,
     description: "Horizontal scanlines",
     glslFunction: `
-vec3 scanlines(vec2 uv, vec3 color1, vec3 color2, float count) {
+vec4 scanlines(vec2 uv, vec3 color1, vec3 color2, float count, float alpha) {
     float s = sin(uv.y * count * 3.14159 * 2.0);
     s = s * 0.5 + 0.5;
-    return mix(color1, color2, s);
+    vec3 col = mix(color1, color2, s);
+    return vec4(col, alpha);
 }
 `,
-    glslCall: "scanlines(uv, {color1}, {color2}, {count})",
+    glslCall: "scanlines(uv, {color1}, {color2}, {count}, {alpha})",
     defaultProperties: {
       color1: {
         value: [0.0, 0.0, 0.0],
@@ -345,6 +398,14 @@ vec3 scanlines(vec2 uv, vec3 color1, vec3 color2, float count) {
         step: 1.0,
         label: "Count",
       },
+      alpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Alpha",
+      },
     },
   },
   {
@@ -354,10 +415,10 @@ vec3 scanlines(vec2 uv, vec3 color1, vec3 color2, float count) {
     icon: <RadialGradientIcon className="w-6 h-6" />,
     description: "Vignette frame",
     glslFunction: `
-vec3 vignette(vec2 uv, vec3 color, float radius, float softness) {
+vec4 vignette(vec2 uv, vec3 color, float radius, float softness) {
     float d = distance(uv, vec2(0.5));
-    float v = smoothstep(radius, radius - softness, d);
-    return color * (1.0 - v);
+    float alpha = 1.0 - smoothstep(radius, radius - softness, d);
+    return vec4(color, alpha);
 }
 `,
     glslCall: "vignette(uv, {color}, {radius}, {softness})",
