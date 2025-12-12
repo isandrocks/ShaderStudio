@@ -50,6 +50,7 @@ function sanitizeString(
   }
 
   // Remove any null bytes and other control characters except newlines/tabs
+  // eslint-disable-next-line no-control-regex
   return value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
 }
 
@@ -403,15 +404,9 @@ export function validateImportedShader(data: unknown): SavedShader {
 }
 
 /**
- * Validates file size before reading
+ * Validates file is not empty
  */
 export function validateFileSize(file: File): void {
-  const MAX_FILE_SIZE = 1024 * 1024; // 1MB
-
-  if (file.size > MAX_FILE_SIZE) {
-    throw new Error(`File too large (max: ${MAX_FILE_SIZE / 1024}KB)`);
-  }
-
   if (file.size === 0) {
     throw new Error("File is empty");
   }
