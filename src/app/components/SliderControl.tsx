@@ -63,7 +63,10 @@ const SliderControl: React.FC<SliderControlProps> = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-between items-center text-xs font-normal text-gray-300">
+      <div
+        className="flex justify-between items-center text-xs font-normal
+          text-gray-300"
+      >
         <label className="cursor-default select-none">{label}</label>
         <input
           type="text"
@@ -73,7 +76,10 @@ const SliderControl: React.FC<SliderControlProps> = ({
           onFocus={() => setIsEditing(true)}
           onBlur={commitValue}
           onKeyDown={handleKeyDown}
-          className="bg-[#383838] border border-[#444444] rounded px-1.5 py-0.5 text-right text-xs w-16 text-white focus:border-primary focus:outline-none hover:border-[#555555] transition-colors font-mono"
+          className="bg-[#383838] border border-[#444444] rounded px-1.5 py-0.5
+            text-right text-xs w-16 text-white focus:border-primary
+            focus:outline-none hover:border-[#555555] transition-colors
+            font-mono"
         />
       </div>
       <div className="flex items-center gap-2">
@@ -93,7 +99,8 @@ const SliderControl: React.FC<SliderControlProps> = ({
         {onDelete && (
           <button
             onClick={onDelete}
-            className="text-white transition-colors flex items-center justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
+            className="text-white transition-colors flex items-center
+              justify-center w-8 h-4 hover:bg-[#3c3c3c] rounded"
             title="Delete uniform"
           >
             <MinusIcon />

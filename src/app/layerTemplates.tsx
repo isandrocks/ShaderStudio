@@ -256,7 +256,7 @@ vec3 plasmaPattern(vec2 uv, vec3 color, float scale, float spin, float time) {
         step: 1.0,
         label: "Scale",
       },
-         spin: {
+      spin: {
         value: 0.3,
         type: "float",
         min: 0.0,

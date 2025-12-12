@@ -370,7 +370,7 @@ async function applyVideoToSelection(videoData: Uint8Array) {
 function createRectangle() {
   try {
     const rect = figma.createRectangle();
-    rect.resize( 1024,  1024);
+    rect.resize(1024, 1024);
     rect.fills = [{ type: "SOLID", color: { r: 0.1, g: 0.1, b: 0.1 } }];
 
     figma.currentPage.appendChild(rect);
@@ -380,8 +380,8 @@ function createRectangle() {
     currentRect = rect;
     figma.ui.postMessage({
       type: "render-shader",
-      width:  1024,
-      height:  1024,
+      width: 1024,
+      height: 1024,
     });
 
     // Timeout fallback

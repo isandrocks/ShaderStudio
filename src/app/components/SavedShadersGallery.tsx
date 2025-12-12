@@ -3,6 +3,10 @@ import type { SavedShader } from "../types";
 import DeleteIcon from "./icons/DeleteIcon";
 import ImportIcon from "./icons/ImportIcon";
 import ExportIcon from "./icons/ExportIcon";
+import {
+  validateImportedShader,
+  validateFileSize,
+} from "../utils/shaderValidator";
 
 interface SavedShadersGalleryProps {
   isOpen: boolean;
@@ -36,7 +40,7 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute(
       "download",
-      `${shader.name.replace(/\s+/g, "_")}.json`
+      `${shader.name.replace(/\s+/g, "_")}.json`,
     );
     document.body.appendChild(downloadAnchorNode); // required for firefox
     downloadAnchorNode.click();
@@ -51,43 +55,70 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const importedShader = JSON.parse(content) as SavedShader;
-
-        // Basic validation
-        if (!importedShader.fragmentShader || !importedShader.dynamicUniforms) {
-          alert("Invalid shader file");
-          return;
-        }
-
-        // Ensure unique ID for import
-        const newShader = {
-          ...importedShader,
-          id: `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: `${importedShader.name} (Imported)`,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-
-        // Save to storage
-        parent.postMessage(
-          { pluginMessage: { type: "save-shader", shader: newShader } },
-          "*"
-        );
-
-        // Reset input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      } catch (err) {
-        console.error("Failed to import shader", err);
-        alert("Failed to parse shader file");
+    try {
+      // Validate file type
+      if (!file.name.endsWith(".json")) {
+        alert("Please select a JSON file");
+        return;
       }
-    };
-    reader.readAsText(file);
+
+      // Validate file size before reading
+      validateFileSize(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+
+          // Parse JSON
+          const parsedData = JSON.parse(content);
+
+          // Validate and sanitize the shader data
+          const validatedShader = validateImportedShader(parsedData);
+
+          // Add "(Imported)" to the name if not already present
+          const finalShader = {
+            ...validatedShader,
+            name: validatedShader.name.includes("(Imported)")
+              ? validatedShader.name
+              : `${validatedShader.name} (Imported)`,
+          };
+
+          // Save to storage
+          parent.postMessage(
+            { pluginMessage: { type: "save-shader", shader: finalShader } },
+            "*",
+          );
+
+          // Reset input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+
+          // Success - no alert needed as the shader will appear in the list
+        } catch (err) {
+          console.error("Failed to import shader", err);
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error";
+          alert(`Failed to import shader:\n${errorMessage}`);
+        }
+      };
+
+      reader.onerror = () => {
+        alert("Failed to read file");
+      };
+
+      reader.readAsText(file);
+    } catch (err) {
+      console.error("File validation failed", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      alert(`File validation failed:\n${errorMessage}`);
+
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   const sortedShaders = [...savedShaders].sort((a, b) => {
@@ -315,7 +346,8 @@ export const SavedShadersGallery: React.FC<SavedShadersGalleryProps> = ({
                   ) : (
                     <div
                       className="absolute top-3 right-7 opacity-0
-                        group-hover:opacity-100 transition-all flex-row-reverse gap-2"
+                        group-hover:opacity-100 transition-all flex-row-reverse
+                        gap-2"
                     >
                       <button
                         onClick={(e) => handleExport(e, shader)}

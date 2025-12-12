@@ -142,7 +142,7 @@ void main() {
       },
     ],
   },
-      {
+  {
     id: "blank",
     name: "Blank Shader",
     description: "A blank shader with no effects",
@@ -183,7 +183,7 @@ void main() {
       },
     ],
   },
-      {
+  {
     id: "satin",
     name: "Satin Shader",
     description: "A smooth satin-like shader",
@@ -241,7 +241,81 @@ void main() {
         min: 0.1,
         max: 1,
         step: 0.05,
-      }
+      },
+    ],
+  },
+  {
+    id: "water-wave",
+    name: "Water Caustics",
+    description: "Looks as if you are at the bottom of the pool",
+    category: "waves",
+    thumbnail: PRESET_THUMBNAILS["water-wave"],
+    fragmentShader: `precision mediump float;
+uniform vec2 iResolution;
+uniform float iTime;
+uniform vec3 uWaterColor;
+uniform float uLightPower;
+uniform float uIntensity;
+
+#define TAU 6.28318530718
+#define MAX_ITER 5
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / iResolution.xy;
+
+  vec4 col = vec4(uWaterColor, uLightPower);
+
+  float time = iTime * .5+23.0;
+
+  vec2 p = mod(uv*TAU, TAU)-250.0;
+
+  vec2 i = vec2(p);
+  float c = 2.0 - uLightPower;
+  float inten = uIntensity * .01;
+
+  for (int n = 0; n < MAX_ITER; n++) 
+  {
+    float t = time * (1.0 - (3.5 / float(n+1)));
+    i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+    c += 1.0/length(vec2(p.x / (sin(i.x+t)/inten),p.y / (cos(i.y+t)/inten)));
+  }
+  c /= float(MAX_ITER);
+  c = 1.17-pow(c, 1.4);
+  vec3 colour = vec3(pow(abs(c), 8.0));
+  colour = clamp(colour + uWaterColor, 0.0, 1.0);
+
+  col = vec4(colour, 1.0);
+
+  gl_FragColor = col;
+}`,
+    defaultUniforms: [
+      {
+        id: "preset-waterColor",
+        type: "vec3",
+        name: "uWaterColor",
+        value: [0.09411764705882353, 0.3803921568627451, 0.4],
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        id: "preset-lightPower",
+        name: "uLightPower",
+        type: "float",
+        value: 0.5,
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
+      {
+        id: "preset-intensity",
+        name: "uIntensity",
+        type: "float",
+        value: 0.5,
+        min: 0,
+        max: 1,
+        step: 0.01,
+      },
     ],
   },
   {
