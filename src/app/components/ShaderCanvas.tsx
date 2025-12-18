@@ -62,8 +62,11 @@ const ShaderCanvas: React.FC<ShaderCanvasProps> = ({
   return (
     <div
       className={`${className} rounded-lg overflow-hidden
-        shadow-[0_2px_8px_rgba(0,0,0,0.5),0_0_0_1px_#3c3c3c] bg-black relative
+        shadow-[0_2px_8px_rgba(0,0,0,0.5),0_0_0_1px_#3c3c3c] relative
         shrink-0`}
+      style={{
+        background: 'repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 20px 20px'
+      }}
     >
       <div
         className="absolute top-0 left-0 right-0 flex items-center p-[7px_11px]

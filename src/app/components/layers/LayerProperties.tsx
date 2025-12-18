@@ -32,9 +32,9 @@ export const LayerProperties: React.FC<LayerPropertiesProps> = ({
   return (
     <div
       className="w-60 bg-[#2c2c2c] border-l border-[#3c3c3c] flex flex-col
-        rounded-sm h-full overflow-y-auto"
+        rounded-sm h-full max-h-canvas overflow-hidden mr-1"
     >
-      <div className="p-3 border-b border-[#3c3c3c]">
+      <div className="p-3 border-b border-[#3c3c3c] shrink-0">
         <h2
           className="text-xs font-bold text-white uppercase tracking-wider mb-3"
         >
@@ -99,9 +99,9 @@ export const LayerProperties: React.FC<LayerPropertiesProps> = ({
         </div>
       </div>
 
-      {/* Effect Specific Properties */}
+      {/* Effect Specific Properties - Scrollable */}
       {template && (
-        <div className="p-3 space-y-4">
+        <div className="flex-1 overflow-y-auto p-3 space-y-4">
           <h3
             className="text-[10px] font-bold text-[#999] uppercase
               tracking-wider"
