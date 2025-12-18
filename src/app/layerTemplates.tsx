@@ -1390,4 +1390,149 @@ vec4 vignette(vec2 uv, vec3 color, float radius, float softness) {
       },
     },
   },
+  {
+    id: "brushed-metal",
+    name: "Brushed Metal",
+    type: "pattern",
+    icon: <NoiseIcon className="w-6 h-6" />,
+    description: "Anisotropic brushed metal effect",
+    glslFunction: `
+float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    
+    // Wrap coordinates to simulate 256x256 repeating texture
+    vec2 i0 = mod(i, 256.0);
+    vec2 i1 = mod(i + vec2(1.0), 256.0);
+    
+    float a = hash(i0);
+    float b = hash(vec2(i1.x, i0.y));
+    float c = hash(vec2(i0.x, i1.y));
+    float d = hash(i1);
+    
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+vec4 brushedMetal(vec2 uv, vec3 valleyColor, vec3 ridgeColor, float angle, float brushScale, float detailScale, float grainStrength, float lightStrength, float seed, float valleyAlpha, float ridgeAlpha) {
+    float rad = radians(angle);
+    vec2 dir = vec2(cos(rad), sin(rad));
+    vec2 perpDir = vec2(-dir.y, dir.x);
+    
+    vec2 rotUv = vec2(dot(uv - 0.5, dir), dot(uv - 0.5, perpDir)) + 0.5;
+    
+    // Modulo seed to prevent precision loss with large coordinates
+    float safeSeed = mod(seed, 1000.0);
+    
+    float g = 0.0;
+    float l = 0.0;
+    const float N = 16.0;
+    
+    for (float i = 0.0; i < N; i++) {
+        vec2 grainUv = (rotUv * vec2(0.06, 4.18) * brushScale + i * vec2((7.0 + 1.0/N) / 256.0) + safeSeed * 0.001) * 256.0;
+        float grainSample = noise(grainUv);
+        g += sqrt(1.0/N) * (-0.5 + grainSample);
+        
+        vec2 lightUv = (vec2(0.0, 0.5) + rotUv * vec2(0.04, 0.004) * detailScale + i * vec2((10.0 + 1.0/N) / 256.0) + safeSeed * 0.001) * 256.0;
+        float lightSample = noise(lightUv);
+        l += sqrt(1.0/N) * (-0.5 + lightSample);
+    }
+    
+    l = exp(4.0 * l * lightStrength - 1.5);
+    g = exp(1.2 * g * grainStrength - 1.5);
+    float v = 0.1 * g + 0.2 * l + 2.0 * g * l;
+    
+    v = pow(v, 1.0 / 2.2);
+    v = clamp(v, 0.0, 1.0);
+    
+    vec3 col_ls = mix(valleyColor, ridgeColor, v);
+    float finalAlpha = mix(valleyAlpha, ridgeAlpha, v);
+    
+    return vec4(col_ls, finalAlpha);
+}
+`,
+    glslCall: "brushedMetal(uv, {valleyColor}, {ridgeColor}, {angle}, {brushScale}, {detailScale}, {grainStrength}, {lightStrength}, {seed}, {valleyAlpha}, {ridgeAlpha})",
+    defaultProperties: {
+      valleyColor: {
+        value: [0.5, 0.5, 0.55],
+        type: "vec3",
+        label: "Valley Color",
+      },
+      ridgeColor: {
+        value: [0.9, 0.9, 0.95],
+        type: "vec3",
+        label: "Ridge Color",
+      },
+      angle: {
+        value: 0.0,
+        type: "float",
+        min: 0,
+        max: 360,
+        step: 1,
+        label: "Brush Angle",
+      },
+      brushScale: {
+        value: 1.0,
+        type: "float",
+        min: 0.1,
+        max: 5.0,
+        step: 0.1,
+        label: "Brush Scale",
+      },
+      detailScale: {
+        value: 1.0,
+        type: "float",
+        min: 0.1,
+        max: 5.0,
+        step: 0.1,
+        label: "Detail Scale",
+      },
+      grainStrength: {
+        value: 1.0,
+        type: "float",
+        min: 0.0,
+        max: 2.0,
+        step: 0.1,
+        label: "Grain Strength",
+      },
+      lightStrength: {
+        value: 1.0,
+        type: "float",
+        min: 0.0,
+        max: 2.0,
+        step: 0.1,
+        label: "Light Strength",
+      },
+      seed: {
+        value: 1234567890.0,
+        type: "float",
+        min: 0,
+        max: 9999999999,
+        step: 1,
+        label: "Seed",
+      },
+      valleyAlpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Valley Alpha",
+      },
+      ridgeAlpha: {
+        value: 1.0,
+        type: "float",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        label: "Ridge Alpha",
+      },
+    },
+  },
 ];
